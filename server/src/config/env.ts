@@ -6,8 +6,8 @@ dotenv.config();
 const envSchema = z.object({
   PORT: z.string().transform((val) => parseInt(val, 10)).default('8000'),
   NODE_ENV: z.enum(['development', 'staging', 'production']).default('development'),
-  MONGODB_URI: z.string().url().default('mongodb://localhost:27017/earthos'),
-  REDIS_URI: z.string().url().default('redis://localhost:6379'),
+  MONGODB_URI: z.string().url().default('mongodb://127.0.0.1:27017/earthos'),
+  REDIS_URI: z.string().url().default('redis://127.0.0.1:6379'),
   JWT_SECRET: z.string().min(8).default('temporary_jwt_secret_key_for_sprint_onboarding')
 });
 

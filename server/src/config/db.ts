@@ -4,7 +4,17 @@ import { env } from './env';
 import { logger } from './logger';
 
 export const redisClient = createClient({
-  url: env.REDIS_URI
+  url: env.REDIS_URI,
+  socket: {
+    reconnectStrategy: (retries) => {
+      // limit reconnection attempts to 3 times to prevent log flooding
+      if (retries > 3) {
+        logger.warn('⚠️ Redis reconnection attempts exhausted. Operating without cache.');
+        return false; // stops reconnecting
+      }
+      return 1000; // retry after 1s
+    }
+  }
 });
 
 redisClient.on('error', (err) => {
@@ -20,12 +30,21 @@ export async function connectDatabases(): Promise<void> {
     // Connect to MongoDB Atlas / Local
     await mongoose.connect(env.MONGODB_URI);
     logger.info('🚀 MongoDB Database connected successfully.');
+  } catch (err: any) {
+    logger.error(`❌ MongoDB connection failed: ${err.message}`);
+    if (env.NODE_ENV === 'production') {
+      process.exit(1);
+    }
+  }
 
+  try {
     // Connect to Redis Client
     await redisClient.connect();
   } catch (err: any) {
-    logger.error(`❌ Database bootstrap failed: ${err.message}`);
-    process.exit(1);
+    logger.error(`❌ Redis connection failed: ${err.message}`);
+    if (env.NODE_ENV === 'production') {
+      process.exit(1);
+    }
   }
 }
 export default connectDatabases;
