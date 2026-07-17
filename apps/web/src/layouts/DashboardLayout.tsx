@@ -21,7 +21,8 @@ import {
   Plus,
   PanelRight,
   TrendingUp,
-  Sparkles
+  Sparkles,
+  AlertCircle
 } from 'lucide-react';
 import { useUiStore } from '../stores/uiStore';
 import { useAuthStore } from '../stores/authStore';
@@ -190,7 +191,7 @@ export const DashboardLayout: React.FC = () => {
                   </span>
                   
                   <EosCard variant="default" className="p-4 border-yellow-500/20 bg-yellow-500/5 flex gap-3">
-                    <AlertCircleIcon size={18} className="text-yellow-500 shrink-0 mt-0.5" />
+                    <AlertCircle size={18} className="text-yellow-500 shrink-0 mt-0.5" />
                     <div className="flex flex-col">
                       <span className="text-xs font-bold text-[#1F2937] dark:text-[#F8FAFC]">Device Repair Overdue</span>
                       <Typography variant="small" className="text-[10px] text-gray-500 leading-normal">
@@ -220,12 +221,4 @@ export const DashboardLayout: React.FC = () => {
   );
 };
 
-// Helper: Custom Inline alert circle icon
-const AlertCircleIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <circle cx="12" cy="12" r="10" />
-    <line x1="12" y1="8" x2="12" y2="12" />
-    <line x1="12" y1="16" x2="12.01" y2="16" />
-  </svg>
-);
 export default DashboardLayout;
