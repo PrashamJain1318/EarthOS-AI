@@ -36,6 +36,9 @@ import { EnterpriseHome } from './pages/EnterpriseHome';
 import { GovernmentHome } from './pages/GovernmentHome';
 import { AdminHome } from './pages/AdminHome';
 
+// Route Protection
+import { PrivateRoute, GuestRoute, RoleRoute } from './components/RouteProtection';
+
 const queryClient = new QueryClient();
 
 function App() {
@@ -52,40 +55,58 @@ function App() {
             <Route path="contact" element={<Contact />} />
           </Route>
 
-          {/* Auth Flow */}
-          <Route path="/" element={<AuthLayout />}>
-            <Route path="login" element={<Login />} />
-            <Route path="signup" element={<Signup />} />
-            <Route path="forgot-password" element={<ForgotPassword />} />
-            <Route path="reset-password" element={<ResetPassword />} />
-            <Route path="verify-email" element={<VerifyEmail />} />
+          {/* Guest Only Auth Flow */}
+          <Route element={<GuestRoute />}>
+            <Route path="/" element={<AuthLayout />}>
+              <Route path="login" element={<Login />} />
+              <Route path="signup" element={<Signup />} />
+              <Route path="forgot-password" element={<ForgotPassword />} />
+              <Route path="reset-password" element={<ResetPassword />} />
+              <Route path="verify-email" element={<VerifyEmail />} />
+            </Route>
           </Route>
 
-          {/* Customer Dashboard */}
-          <Route path="/" element={<DashboardLayout />}>
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="objects" element={<Objects />} />
-            <Route path="scanner" element={<Scanner />} />
-            <Route path="passport" element={<Passport />} />
-            <Route path="marketplace" element={<Marketplace />} />
-            <Route path="earthgpt" element={<EarthGPT />} />
-            <Route path="earth-twin" element={<EarthTwin />} />
-            <Route path="community" element={<Community />} />
+          {/* Secure Individual User Routes */}
+          <Route element={<PrivateRoute />}>
+            <Route element={<RoleRoute allowedRoles={['USER', 'ADMIN', 'SUPER_ADMIN']} />}>
+              <Route path="/" element={<DashboardLayout />}>
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="objects" element={<Objects />} />
+                <Route path="scanner" element={<Scanner />} />
+                <Route path="passport" element={<Passport />} />
+                <Route path="marketplace" element={<Marketplace />} />
+                <Route path="earthgpt" element={<EarthGPT />} />
+                <Route path="earth-twin" element={<EarthTwin />} />
+                <Route path="community" element={<Community />} />
+              </Route>
+            </Route>
           </Route>
 
-          {/* Enterprise Console */}
-          <Route path="/" element={<EnterpriseLayout />}>
-            <Route path="enterprise" element={<EnterpriseHome />} />
+          {/* Secure Enterprise Console */}
+          <Route element={<PrivateRoute />}>
+            <Route element={<RoleRoute allowedRoles={['ENTERPRISE', 'ADMIN', 'SUPER_ADMIN']} />}>
+              <Route path="/" element={<EnterpriseLayout />}>
+                <Route path="enterprise" element={<EnterpriseHome />} />
+              </Route>
+            </Route>
           </Route>
 
-          {/* Government Portal */}
-          <Route path="/" element={<GovernmentLayout />}>
-            <Route path="government" element={<GovernmentHome />} />
+          {/* Secure Government Portal */}
+          <Route element={<PrivateRoute />}>
+            <Route element={<RoleRoute allowedRoles={['GOVERNMENT', 'ADMIN', 'SUPER_ADMIN']} />}>
+              <Route path="/" element={<GovernmentLayout />}>
+                <Route path="government" element={<GovernmentHome />} />
+              </Route>
+            </Route>
           </Route>
 
-          {/* Admin Panel */}
-          <Route path="/" element={<AdminLayout />}>
-            <Route path="admin" element={<AdminHome />} />
+          {/* Secure Admin Control Panel */}
+          <Route element={<PrivateRoute />}>
+            <Route element={<RoleRoute allowedRoles={['ADMIN', 'SUPER_ADMIN']} />}>
+              <Route path="/" element={<AdminLayout />}>
+                <Route path="admin" element={<AdminHome />} />
+              </Route>
+            </Route>
           </Route>
 
           {/* Catch-all Redirect */}
