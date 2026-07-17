@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { EosCard, EosBadge } from '@earthos/ui';
 import { HelpCircle, AlertTriangle, RefreshCw } from 'lucide-react';
 
@@ -97,30 +96,41 @@ export const DashboardWidget: React.FC<DashboardWidgetProps> = ({
 
   const isTrendUp = trend >= 0;
 
+  // Generate native SVG points for the sparkline to avoid Recharts crashes on React 19
+  const minVal = Math.min(...sparklineData.map(d => d.value));
+  const maxVal = Math.max(...sparklineData.map(d => d.value));
+  const rangeVal = maxVal - minVal || 1;
+  const svgPoints = sparklineData.map((d, i) => {
+    const x = (i / (sparklineData.length - 1)) * 100;
+    const y = 30 - ((d.value - minVal) / rangeVal) * 22; // leaving 8px total top padding
+    return `${x},${y}`;
+  }).join(' ');
+
   return (
     <EosCard
       variant="glass"
       className="h-[180px] p-6 relative flex flex-col justify-between overflow-hidden transition-all duration-300 hover:border-[#2E7D32]/30 hover:shadow-lg group"
     >
-      {/* Sparkline background matching trend color */}
+      {/* Sparkline background matching trend color (native SVG to prevent React 19 crashes) */}
       <div className="absolute inset-x-0 bottom-0 h-16 opacity-30 select-none z-0">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={sparklineData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-            <defs>
-              <linearGradient id={`gradient-${title}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={isTrendUp ? '#2E7D32' : '#D32F2F'} stopOpacity={0.8} />
-                <stop offset="100%" stopColor={isTrendUp ? '#2E7D32' : '#D32F2F'} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <Area
-              type="monotone"
-              dataKey="value"
-              stroke={isTrendUp ? '#2E7D32' : '#D32F2F'}
-              strokeWidth={1.5}
-              fill={`url(#gradient-${title})`}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+        <svg className="w-full h-full" viewBox="0 0 100 30" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id={`gradient-${title}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={isTrendUp ? '#2E7D32' : '#D32F2F'} stopOpacity={0.8} />
+              <stop offset="100%" stopColor={isTrendUp ? '#2E7D32' : '#D32F2F'} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <path
+            d={`M 0,30 L ${svgPoints} L 100,30 Z`}
+            fill={`url(#gradient-${title})`}
+          />
+          <polyline
+            fill="none"
+            stroke={isTrendUp ? '#2E7D32' : '#D32F2F'}
+            strokeWidth="1.5"
+            points={svgPoints}
+          />
+        </svg>
       </div>
 
       {/* Top row */}
