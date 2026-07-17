@@ -33,6 +33,7 @@ import { EarthTwin } from './pages/EarthTwin';
 import { Community } from './pages/Community';
 import { Wallet } from './pages/Wallet';
 import { Settings } from './pages/Settings';
+import { Analytics } from './pages/Analytics';
 
 import { EnterpriseHome } from './pages/EnterpriseHome';
 import { GovernmentHome } from './pages/GovernmentHome';
@@ -73,6 +74,7 @@ function App() {
             <Route element={<RoleRoute allowedRoles={['USER', 'ADMIN', 'SUPER_ADMIN']} />}>
               <Route path="/" element={<DashboardLayout />}>
                 <Route path="dashboard" element={<Dashboard />} />
+                <Route path="analytics" element={<Analytics />} />
                 <Route path="objects" element={<Objects />} />
                 <Route path="scanner" element={<Scanner />} />
                 <Route path="passport" element={<Passport />} />

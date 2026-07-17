@@ -20,6 +20,7 @@ import {
   Moon,
   Plus,
   PanelRight,
+  TrendingUp,
   Sparkles
 } from 'lucide-react';
 import { useUiStore } from '../stores/uiStore';
@@ -35,6 +36,7 @@ export const DashboardLayout: React.FC = () => {
 
   const menuItems = [
     { label: 'Overview', href: '/dashboard', icon: <LayoutDashboard size={18} /> },
+    { label: 'Analytics', href: '/analytics', icon: <TrendingUp size={18} /> },
     { label: 'My Objects', href: '/objects', icon: <Package size={18} /> },
     { label: 'AI Scanner', href: '/scanner', icon: <ScanLine size={18} /> },
     { label: 'Earth Passport', href: '/passport', icon: <BookOpen size={18} /> },
