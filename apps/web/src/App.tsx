@@ -31,6 +31,8 @@ import { Marketplace } from './pages/Marketplace';
 import { EarthGPT } from './pages/EarthGPT';
 import { EarthTwin } from './pages/EarthTwin';
 import { Community } from './pages/Community';
+import { Wallet } from './pages/Wallet';
+import { Settings } from './pages/Settings';
 
 import { EnterpriseHome } from './pages/EnterpriseHome';
 import { GovernmentHome } from './pages/GovernmentHome';
@@ -78,6 +80,8 @@ function App() {
                 <Route path="earthgpt" element={<EarthGPT />} />
                 <Route path="earth-twin" element={<EarthTwin />} />
                 <Route path="community" element={<Community />} />
+                <Route path="wallet" element={<Wallet />} />
+                <Route path="settings" element={<Settings />} />
               </Route>
             </Route>
           </Route>
