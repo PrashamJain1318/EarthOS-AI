@@ -1,0 +1,19 @@
+{
+  "name": "earthos-ai",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "server"
+  ],
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo run dev --parallel",
+    "lint": "turbo lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\""
+  },
+  "devDependencies": {
+    "turbo": "^2.0.14",
+    "prettier": "^3.3.3"
+  }
+}
