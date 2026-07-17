@@ -10,6 +10,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { DashboardWidget } from '../components/DashboardWidget';
+import { RecentActivity } from '../components/RecentActivity';
 
 export const Dashboard: React.FC = () => {
   // Mock loading and error telemetry states to verify layouts
@@ -135,6 +136,9 @@ export const Dashboard: React.FC = () => {
           </Typography>
         </div>
       </div>
+
+      {/* Recent Activity Timeline Section */}
+      <RecentActivity />
     </div>
   );
 };
