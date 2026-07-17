@@ -3,9 +3,12 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { EosSidebar } from '@earthos/ui';
 import { Briefcase, BarChart3, Settings, ShieldCheck } from 'lucide-react';
 
+import { useAuthStore } from '../stores/authStore';
+
 export const EnterpriseLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const logout = useAuthStore((state) => state.logout);
 
   const menuItems = [
     { label: 'Scope 3 Overview', href: '/enterprise', icon: <BarChart3 size={18} /> },
@@ -19,7 +22,10 @@ export const EnterpriseLayout: React.FC = () => {
         items={menuItems}
         activeHref={location.pathname}
         onItemClick={(href) => navigate(href)}
-        onLogoutClick={() => navigate('/')}
+        onLogoutClick={() => {
+          logout();
+          navigate('/');
+        }}
         orgName="ENTERPRISE HUB"
         logoIcon={<ShieldCheck size={24} className="text-blue-500" />}
       />

@@ -3,9 +3,12 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { EosSidebar } from '@earthos/ui';
 import { Shield, Users, AlertTriangle, FileSpreadsheet } from 'lucide-react';
 
+import { useAuthStore } from '../stores/authStore';
+
 export const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const logout = useAuthStore((state) => state.logout);
 
   const menuItems = [
     { label: 'Users DB', href: '/admin', icon: <Users size={18} /> },
@@ -19,7 +22,10 @@ export const AdminLayout: React.FC = () => {
         items={menuItems}
         activeHref={location.pathname}
         onItemClick={(href) => navigate(href)}
-        onLogoutClick={() => navigate('/')}
+        onLogoutClick={() => {
+          logout();
+          navigate('/');
+        }}
         orgName="ADMIN CONSOLE"
         logoIcon={<Shield size={24} className="text-red-500" />}
       />

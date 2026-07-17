@@ -12,11 +12,13 @@ import {
   Users2 
 } from 'lucide-react';
 import { useUiStore } from '../stores/uiStore';
+import { useAuthStore } from '../stores/authStore';
 
 export const DashboardLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { sidebarOpen } = useUiStore();
+  const logout = useAuthStore((state) => state.logout);
 
   const menuItems = [
     { label: 'Overview', href: '/dashboard', icon: <LayoutDashboard size={18} /> },
@@ -37,7 +39,10 @@ export const DashboardLayout: React.FC = () => {
           items={menuItems}
           activeHref={location.pathname}
           onItemClick={(href) => navigate(href)}
-          onLogoutClick={() => navigate('/')}
+          onLogoutClick={() => {
+            logout();
+            navigate('/');
+          }}
         />
       ) : null}
 

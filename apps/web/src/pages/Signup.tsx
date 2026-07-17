@@ -36,14 +36,14 @@ export const Signup: React.FC = () => {
     }
   });
 
-  const onSubmit = async (_data: SignupFormValues) => {
+  const onSubmit = async (data: SignupFormValues) => {
     setIsLoading(true);
     setErrorMsg(null);
 
-    // Simulate mock sign-up registration
+    // Simulate mock sign-up registration and pass data state
     setTimeout(() => {
       setIsLoading(false);
-      navigate('/verify-email');
+      navigate('/verify-email', { state: { email: data.email, name: data.name, role: data.role } });
     }, 1500);
   };
 

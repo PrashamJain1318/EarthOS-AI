@@ -3,9 +3,12 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { EosSidebar } from '@earthos/ui';
 import { Landmark, Map, FilePieChart } from 'lucide-react';
 
+import { useAuthStore } from '../stores/authStore';
+
 export const GovernmentLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const logout = useAuthStore((state) => state.logout);
 
   const menuItems = [
     { label: 'Smart City Map', href: '/government', icon: <Map size={18} /> },
@@ -18,7 +21,10 @@ export const GovernmentLayout: React.FC = () => {
         items={menuItems}
         activeHref={location.pathname}
         onItemClick={(href) => navigate(href)}
-        onLogoutClick={() => navigate('/')}
+        onLogoutClick={() => {
+          logout();
+          navigate('/');
+        }}
         orgName="GOVERNMENT PORTAL"
         logoIcon={<Landmark size={24} className="text-emerald-500" />}
       />

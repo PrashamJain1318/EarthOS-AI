@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { motion } from 'framer-motion';
 import { Typography, EosInput, EosButton, EosBadge } from '@earthos/ui';
 import { KeyRound, Mail, AlertCircle, ArrowRight } from 'lucide-react';
+import { useAuthStore } from '../stores/authStore';
+import { UserRole } from '@earthos/types';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -16,6 +18,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
+  const login = useAuthStore((state) => state.login);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -37,7 +40,34 @@ export const Login: React.FC = () => {
       if (data.email === 'error@earthos.ai') {
         setErrorMsg('Invalid credentials. Please try again.');
       } else {
-        navigate('/dashboard');
+        let role: UserRole = 'USER';
+        if (data.email.includes('enterprise')) {
+          role = 'ENTERPRISE';
+        } else if (data.email.includes('government')) {
+          role = 'GOVERNMENT';
+        } else if (data.email.includes('admin')) {
+          role = 'ADMIN';
+        }
+
+        login(
+          {
+            id: 'mock_user_123',
+            name: 'Arthur Dent',
+            email: data.email,
+            role: role
+          },
+          'mock_jwt_access_token'
+        );
+
+        if (role === 'ENTERPRISE') {
+          navigate('/enterprise');
+        } else if (role === 'GOVERNMENT') {
+          navigate('/government');
+        } else if (role === 'ADMIN') {
+          navigate('/admin');
+        } else {
+          navigate('/dashboard');
+        }
       }
     }, 1500);
   };

@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
 import { Typography, EosInput, EosButton, EosBadge } from '@earthos/ui';
 import { ShieldCheck, Mail, AlertCircle } from 'lucide-react';
+import { useAuthStore } from '../stores/authStore';
+import { UserRole } from '@earthos/types';
 
 const verifySchema = z.object({
   code: z.string().length(6, 'Verification code must be exactly 6 characters')
@@ -15,8 +17,15 @@ type VerifyFormValues = z.infer<typeof verifySchema>;
 
 export const VerifyEmail: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const login = useAuthStore((state) => state.login);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const signupData = location.state as { email: string; name: string; role: string } | null;
+  const targetEmail = signupData?.email || 'dent@earth.com';
+  const targetName = signupData?.name || 'Arthur Dent';
+  const targetRole = (signupData?.role as UserRole) || 'USER';
 
   const {
     register,
@@ -36,7 +45,25 @@ export const VerifyEmail: React.FC = () => {
       if (data.code === '000000') {
         setErrorMsg('Invalid or expired code. Please request a new one.');
       } else {
-        navigate('/dashboard');
+        login(
+          {
+            id: 'mock_user_123',
+            name: targetName,
+            email: targetEmail,
+            role: targetRole
+          },
+          'mock_jwt_access_token'
+        );
+
+        if (targetRole === 'ENTERPRISE') {
+          navigate('/enterprise');
+        } else if (targetRole === 'GOVERNMENT') {
+          navigate('/government');
+        } else if (targetRole === 'ADMIN' || targetRole === 'SUPER_ADMIN') {
+          navigate('/admin');
+        } else {
+          navigate('/dashboard');
+        }
       }
     }, 1500);
   };
