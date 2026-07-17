@@ -10,8 +10,8 @@ import {
   BookOpen, 
   ShoppingBag, 
   MessageSquare, 
-  Globe2, 
-  Users2,
+  Globe, 
+  Users,
   Wallet,
   Settings as SettingsIcon,
   Search,
@@ -44,8 +44,8 @@ export const DashboardLayout: React.FC = () => {
     { label: 'Marketplace', href: '/marketplace', icon: <ShoppingBag size={18} /> },
     { label: 'EarthGPT', href: '/earthgpt', icon: <MessageSquare size={18} /> },
     { label: 'Carbon Wallet', href: '/wallet', icon: <Wallet size={18} /> },
-    { label: 'Earth Twin', href: '/earth-twin', icon: <Globe2 size={18} /> },
-    { label: 'Community', href: '/community', icon: <Users2 size={18} /> },
+    { label: 'Earth Twin', href: '/earth-twin', icon: <Globe size={18} /> },
+    { label: 'Community', href: '/community', icon: <Users size={18} /> },
     { label: 'Settings', href: '/settings', icon: <SettingsIcon size={18} /> }
   ];
 

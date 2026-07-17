@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Typography, EosCard, EosBadge } from '@earthos/ui';
-import { Users2, Award } from 'lucide-react';
+import { Users, Award } from 'lucide-react';
 
 export const Community: React.FC = () => {
   return (
@@ -12,7 +12,7 @@ export const Community: React.FC = () => {
 
       <div className="grid md:grid-cols-2 gap-6">
         <EosCard variant="default" className="flex gap-4 p-6 border border-[#2E7D32]/30">
-          <Users2 className="text-[#2E7D32]" size={28} />
+          <Users className="text-[#2E7D32]" size={28} />
           <div className="flex flex-col gap-2">
             <div className="flex justify-between items-start">
               <Typography variant="h4">Metro Polymer Sweep</Typography>
