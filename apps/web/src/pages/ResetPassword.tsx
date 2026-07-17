@@ -5,15 +5,19 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
 import { Typography, EosInput, EosButton, EosBadge } from '@earthos/ui';
-import { Mail, CheckCircle, ArrowLeft } from 'lucide-react';
+import { KeyRound, CheckCircle } from 'lucide-react';
 
-const forgotSchema = z.object({
-  email: z.string().email('Please enter a valid email address')
+const resetSchema = z.object({
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  confirmPassword: z.string()
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword']
 });
 
-type ForgotFormValues = z.infer<typeof forgotSchema>;
+type ResetFormValues = z.infer<typeof resetSchema>;
 
-export const ForgotPassword: React.FC = () => {
+export const ResetPassword: React.FC = () => {
   const navigate = useNavigate();
   const [isSuccess, setIsSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -22,14 +26,14 @@ export const ForgotPassword: React.FC = () => {
     register,
     handleSubmit,
     formState: { errors }
-  } = useForm<ForgotFormValues>({
-    resolver: zodResolver(forgotSchema)
+  } = useForm<ResetFormValues>({
+    resolver: zodResolver(resetSchema)
   });
 
-  const onSubmit = async (_data: ForgotFormValues) => {
+  const onSubmit = async (_data: ResetFormValues) => {
     setIsLoading(true);
 
-    // Simulate recovery link dispatch
+    // Simulate password resetting verification
     setTimeout(() => {
       setIsLoading(false);
       setIsSuccess(true);
@@ -45,12 +49,12 @@ export const ForgotPassword: React.FC = () => {
       className="flex flex-col gap-5 w-full"
     >
       <div className="flex flex-col gap-1 text-center items-center">
-        <EosBadge variant="info">Recovery Module</EosBadge>
+        <EosBadge variant="info">Security Credentials</EosBadge>
         <Typography variant="h3" className="font-display font-bold mt-2">
-          Forgot Password
+          Reset Password
         </Typography>
         <Typography variant="small" className="text-gray-400">
-          We will dispatch a secure reset vector connection link.
+          Establish new security access keys for your profile.
         </Typography>
       </div>
 
@@ -63,39 +67,37 @@ export const ForgotPassword: React.FC = () => {
           <CheckCircle size={36} />
           <div>
             <Typography variant="h4" className="text-green-500 font-bold mb-1">
-              Reset Link Dispatched
+              Reset Successful
             </Typography>
             <Typography variant="small" className="text-[#2E7D32]/85 text-xs">
-              Check your inbox. A secure recovery connection vector has been generated and sent.
+              Your security password keys have been successfully updated in our registries.
             </Typography>
           </div>
-          <EosButton variant="secondary" size="sm" className="w-full mt-2" onClick={() => navigate('/login')}>
-            Return to Authenticator
+          <EosButton variant="primary" size="sm" className="w-full mt-2" onClick={() => navigate('/login')}>
+            Authenticate session
           </EosButton>
         </motion.div>
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <EosInput
-            label="Email Address"
-            type="email"
-            placeholder="dent@earth.com"
-            icon={<Mail size={18} />}
-            error={errors.email?.message}
+            label="New Password"
+            type="password"
+            placeholder="••••••••"
+            icon={<KeyRound size={18} />}
+            error={errors.password?.message}
             disabled={isLoading}
-            {...register('email')}
+            {...register('password')}
           />
 
-          <div className="text-center text-xs mt-1 select-none font-semibold">
-            <button
-              type="button"
-              onClick={() => navigate('/login')}
-              className="text-gray-400 hover:text-[#7E57C2] flex items-center gap-1.5 justify-center mx-auto"
-              disabled={isLoading}
-            >
-              <ArrowLeft size={14} />
-              <span>Back to Authenticator</span>
-            </button>
-          </div>
+          <EosInput
+            label="Confirm New Password"
+            type="password"
+            placeholder="••••••••"
+            icon={<KeyRound size={18} />}
+            error={errors.confirmPassword?.message}
+            disabled={isLoading}
+            {...register('confirmPassword')}
+          />
 
           <EosButton
             type="submit"
@@ -103,11 +105,11 @@ export const ForgotPassword: React.FC = () => {
             className="w-full mt-2 font-semibold"
             isLoading={isLoading}
           >
-            Dispatch Recovery Link
+            Update Security Credentials
           </EosButton>
         </form>
       )}
     </motion.div>
   );
 };
-export default ForgotPassword;
+export default ResetPassword;

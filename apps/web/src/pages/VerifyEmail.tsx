@@ -5,16 +5,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
 import { Typography, EosInput, EosButton, EosBadge } from '@earthos/ui';
-import { KeyRound, Mail, AlertCircle, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Mail, AlertCircle } from 'lucide-react';
 
-const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters')
+const verifySchema = z.object({
+  code: z.string().length(6, 'Verification code must be exactly 6 characters')
 });
 
-type LoginFormValues = z.infer<typeof loginSchema>;
+type VerifyFormValues = z.infer<typeof verifySchema>;
 
-export const Login: React.FC = () => {
+export const VerifyEmail: React.FC = () => {
   const navigate = useNavigate();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -23,19 +22,19 @@ export const Login: React.FC = () => {
     register,
     handleSubmit,
     formState: { errors }
-  } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema)
+  } = useForm<VerifyFormValues>({
+    resolver: zodResolver(verifySchema)
   });
 
-  const onSubmit = async (data: LoginFormValues) => {
+  const onSubmit = async (data: VerifyFormValues) => {
     setIsLoading(true);
     setErrorMsg(null);
 
-    // Simulate mock authentication verification
+    // Simulate OTP verification logic
     setTimeout(() => {
       setIsLoading(false);
-      if (data.email === 'error@earthos.ai') {
-        setErrorMsg('Invalid credentials. Please try again.');
+      if (data.code === '000000') {
+        setErrorMsg('Invalid or expired code. Please request a new one.');
       } else {
         navigate('/dashboard');
       }
@@ -51,12 +50,12 @@ export const Login: React.FC = () => {
       className="flex flex-col gap-5 w-full"
     >
       <div className="flex flex-col gap-1 text-center items-center">
-        <EosBadge variant="info">Secure Gateway</EosBadge>
+        <EosBadge variant="info">Verification Gateway</EosBadge>
         <Typography variant="h3" className="font-display font-bold mt-2">
-          Welcome Back
+          Verify Email
         </Typography>
         <Typography variant="small" className="text-gray-400">
-          Enter credentials to access the Operating System.
+          Enter the 6-digit access OTP code dispatched to your inbox.
         </Typography>
       </div>
 
@@ -69,41 +68,24 @@ export const Login: React.FC = () => {
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <EosInput
-          label="Email Address"
-          type="email"
-          placeholder="architect@earthos.ai"
+          label="6-Digit OTP Code"
+          placeholder="123456"
           icon={<Mail size={18} />}
-          error={errors.email?.message}
+          error={errors.code?.message}
           disabled={isLoading}
-          {...register('email')}
+          maxLength={6}
+          className="text-center tracking-widest font-mono text-lg font-bold"
+          {...register('code')}
         />
 
-        <EosInput
-          label="Password"
-          type="password"
-          placeholder="••••••••"
-          icon={<KeyRound size={18} />}
-          error={errors.password?.message}
-          disabled={isLoading}
-          {...register('password')}
-        />
-
-        <div className="flex justify-between items-center text-xs mt-1 select-none font-semibold">
+        <div className="text-center text-xs mt-1 select-none font-semibold">
           <button
             type="button"
-            onClick={() => navigate('/forgot-password')}
+            onClick={() => alert('Verification code resent!')}
             className="text-[#7E57C2] hover:underline"
             disabled={isLoading}
           >
-            Forgot Password?
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/signup')}
-            className="text-gray-400 hover:text-gray-700 dark:hover:text-[#F8FAFC]"
-            disabled={isLoading}
-          >
-            Create Account
+            Resend Verification Code
           </button>
         </div>
 
@@ -113,11 +95,11 @@ export const Login: React.FC = () => {
           className="w-full mt-2 font-semibold"
           isLoading={isLoading}
         >
-          <span>Authenticate Session</span>
-          <ArrowRight size={16} className="ml-1.5" />
+          <ShieldCheck size={18} className="mr-1.5" />
+          <span>Verify & Register Session</span>
         </EosButton>
       </form>
     </motion.div>
   );
 };
-export default Login;
+export default VerifyEmail;
