@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { EosCard, EosBadge } from '@earthos/ui';
+import { EosCard, EosBadge, Typography } from '@earthos/ui';
 import { HelpCircle, AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface SparklineData {

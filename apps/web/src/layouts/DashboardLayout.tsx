@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { EosSidebar, EosButton, EosCard, EosInput } from '@earthos/ui';
+import { EosSidebar, EosButton, EosCard, EosInput, Typography } from '@earthos/ui';
 import { 
   LayoutDashboard, 
   Package, 
