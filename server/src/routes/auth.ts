@@ -1,10 +1,13 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { OAuth2Client } from 'google-auth-library';
 import { env } from '../config/env';
 import { logger } from '../config/logger';
 import { UserModel } from '../models/User';
 
 export const authRouter = Router();
+const googleClient = new OAuth2Client(env.GOOGLE_CLIENT_ID);
+
 
 // Utility: Sign Access Token
 const signAccessToken = (userId: string, role: string) => {
@@ -279,6 +282,87 @@ authRouter.post('/reset-password', async (req: Request, res: Response, next: Nex
     res.status(200).json({
       success: true,
       data: { message: 'Password has been successfully updated.' }
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 8. Google OAuth sign-in / signup route
+authRouter.post('/google', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { idToken } = req.body;
+    if (!idToken) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'ID_TOKEN_REQUIRED', message: 'Google idToken is required.' }
+      });
+    }
+
+    let email: string;
+    let name: string;
+
+    if (idToken === 'mock_google_id_token' && env.NODE_ENV === 'development') {
+      email = 'google_mock@earthos.ai';
+      name = 'Google Mock User';
+    } else {
+      const ticket = await googleClient.verifyIdToken({
+        idToken,
+        audience: env.GOOGLE_CLIENT_ID
+      });
+      const payload = ticket.getPayload();
+      if (!payload || !payload.email || !payload.name) {
+        return res.status(400).json({
+          success: false,
+          error: { code: 'INVALID_GOOGLE_TOKEN', message: 'Unable to parse credentials from Google token.' }
+        });
+      }
+      email = payload.email;
+      name = payload.name;
+    }
+
+    // Find or Create User
+    let user = await UserModel.findOne({ email });
+    if (!user) {
+      // Create Google User - verified automatically since Google checked identity!
+      // Assign a random password, user model pre-save hook will hash it
+      const randomPassword = Math.random().toString(36).slice(-16);
+      user = new UserModel({
+        name,
+        email,
+        password: randomPassword,
+        role: 'USER',
+        isVerified: true
+      });
+      await user.save();
+      logger.info(`👤 Created new User profile via Google OAuth: ${email}`);
+    } else {
+      // If user exists but is unverified, verify them now
+      if (!user.isVerified) {
+        user.isVerified = true;
+      }
+      logger.info(`🔑 User logged in via Google OAuth: ${email}`);
+    }
+
+    // Sign Access & Refresh Tokens
+    const accessToken = signAccessToken(user._id.toString(), user.role);
+    const refreshToken = signRefreshToken(user._id.toString());
+
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        accessToken,
+        refreshToken,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        }
+      }
     });
   } catch (err) {
     next(err);
