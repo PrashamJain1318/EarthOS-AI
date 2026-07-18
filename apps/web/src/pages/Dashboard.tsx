@@ -73,7 +73,7 @@ export const Dashboard: React.FC = () => {
             sparklineData={sparklineCarbonSaved}
           />
           <DashboardWidget
-            title="Active Objects"
+            title="Owned Objects"
             value={34}
             icon={<Package size={20} className="text-blue-500" />}
             trend={8.5}
@@ -89,7 +89,7 @@ export const Dashboard: React.FC = () => {
             sparklineData={sparklineMarketplace}
           />
           <DashboardWidget
-            title="Repairs Completed"
+            title="Repair Count"
             value={9}
             icon={<Wrench size={20} className="text-gray-500" />}
             trend={-2.1}
@@ -97,7 +97,7 @@ export const Dashboard: React.FC = () => {
             sparklineData={sparklineRepairs}
           />
           <DashboardWidget
-            title="Donations Made"
+            title="Donation Impact"
             value={6}
             icon={<Heart size={20} className="text-red-500" />}
             trend={50.0}

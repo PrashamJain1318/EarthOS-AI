@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // Layouts
 import { PublicLayout } from './layouts/PublicLayout';
 import { AuthLayout } from './layouts/AuthLayout';
-import { DashboardLayout } from './layouts/DashboardLayout';
+import { UserLayout } from './layouts/UserLayout';
 import { AdminLayout } from './layouts/AdminLayout';
 import { EnterpriseLayout } from './layouts/EnterpriseLayout';
 import { GovernmentLayout } from './layouts/GovernmentLayout';
@@ -13,6 +13,7 @@ import { NgoLayout } from './layouts/NgoLayout';
 import { RepairLayout } from './layouts/RepairLayout';
 import { RecyclerLayout } from './layouts/RecyclerLayout';
 import { SellerLayout } from './layouts/SellerLayout';
+import { SuperAdminLayout } from './layouts/SuperAdminLayout';
 // Pages
 import { Home } from './pages/Home';
 import { About } from './pages/About';
@@ -51,7 +52,7 @@ import { RecyclerDashboard } from './pages/RecyclerDashboard';
 import { SellerDashboard } from './pages/SellerDashboard';
 
 // Route Protection
-import { PrivateRoute, GuestRoute, RoleRoute, DashboardRedirect } from './components/RouteProtection';
+import { PrivateRoute, GuestRoute, RoleRoute, AppRedirect } from './components/RouteProtection';
 import { PortalFeaturePlaceholder } from './components/PortalFeaturePlaceholder';
 
 const queryClient = new QueryClient();
@@ -82,11 +83,11 @@ function App() {
           </Route>
 
           <Route path="/dashboard">
-            <Route index element={<DashboardRedirect />} />
+            <Route index element={<AppRedirect />} />
             {/* Secure Individual User Routes */}
             <Route element={<PrivateRoute />}>
               <Route element={<RoleRoute allowedRoles={['USER', 'ADMIN', 'SUPER_ADMIN']} />}>
-                <Route path="user" element={<DashboardLayout />}>
+                <Route path="user" element={<UserLayout />}>
                   <Route index element={<Dashboard />} />
                   <Route path="analytics" element={<Analytics />} />
                   <Route path="objects" element={<Objects />} />
@@ -100,6 +101,7 @@ function App() {
                   <Route path="repair" element={<PortalFeaturePlaceholder name="Hardware Repair Console" description="Diagnose and schedule hardware repair tickets." />} />
                   <Route path="donate" element={<PortalFeaturePlaceholder name="Donate Stream" description="Connect redundant hardware directly with registered NGOs." />} />
                   <Route path="wallet" element={<Wallet />} />
+                  <Route path="earthscore" element={<PortalFeaturePlaceholder name="Earth Score" description="Detailed environmental impact metrics." />} />
                   <Route path="notifications" element={<PortalFeaturePlaceholder name="Notifications Alert Center" description="Telemetry warnings and system notification log." />} />
                   <Route path="profile" element={<PortalFeaturePlaceholder name="Profile Card Settings" description="Personal credentials and earthscore telemetry keys." />} />
                   <Route path="settings" element={<Settings />} />
@@ -112,8 +114,13 @@ function App() {
               <Route element={<RoleRoute allowedRoles={['ENTERPRISE', 'ADMIN', 'SUPER_ADMIN']} />}>
                 <Route path="enterprise" element={<EnterpriseLayout />}>
                   <Route index element={<EnterpriseHome />} />
-                  <Route path="streams" element={<PortalFeaturePlaceholder name="Material Streams" description="Industrial byproduct matching and logistics registry." />} />
-                  <Route path="settings" element={<PortalFeaturePlaceholder name="ERP Integration" description="Configure background sync tools for enterprise databases." />} />
+                  <Route path="assets" element={<PortalFeaturePlaceholder name="Assets Management" description="Lifecycle tracking of physical assets." />} />
+                  <Route path="employees" element={<PortalFeaturePlaceholder name="Employees" description="Employee sustainability training and engagement." />} />
+                  <Route path="departments" element={<PortalFeaturePlaceholder name="Departments" description="Departmental ESG goals and carbon quotas." />} />
+                  <Route path="carbon" element={<PortalFeaturePlaceholder name="Carbon Analytics" description="Scope 3 emissions accounting." />} />
+                  <Route path="waste" element={<PortalFeaturePlaceholder name="Waste Reports" description="Internal recycling and diversion reporting." />} />
+                  <Route path="compliance" element={<PortalFeaturePlaceholder name="Compliance" description="ESG compliance checklists and audits." />} />
+                  <Route path="settings" element={<PortalFeaturePlaceholder name="Settings" description="Configure background sync tools for enterprise databases." />} />
                 </Route>
               </Route>
             </Route>
@@ -123,13 +130,13 @@ function App() {
               <Route element={<RoleRoute allowedRoles={['GOVERNMENT', 'ADMIN', 'SUPER_ADMIN']} />}>
                 <Route path="government" element={<GovernmentLayout />}>
                   <Route index element={<GovernmentHome />} />
-                  <Route path="stats" element={<PortalFeaturePlaceholder name="National Statistics" description="Nation-wide resource diversion and recycling target metrics." />} />
-                  <Route path="waste" element={<PortalFeaturePlaceholder name="Waste Analytics" description="Municipal landfills geospatial heatmaps and diversion curves." />} />
-                  <Route path="districts" element={<PortalFeaturePlaceholder name="District Reports" description="Regional districts performance compliance audit logs." />} />
-                  <Route path="carbon" element={<PortalFeaturePlaceholder name="Carbon Audit Ledger" description="Official government audit database for carbon credit allocation." />} />
+                  <Route path="states" element={<PortalFeaturePlaceholder name="States Dashboard" description="State-level resource diversion and targets." />} />
+                  <Route path="districts" element={<PortalFeaturePlaceholder name="District Reports" description="Regional districts performance compliance." />} />
                   <Route path="ngos" element={<PortalFeaturePlaceholder name="NGO Partner Registries" description="Manage certified non-profit distribution networks." />} />
-                  <Route path="recyclers" element={<PortalFeaturePlaceholder name="Sorting Facilities" description="Authorized waste recyclers registry & compliance status." />} />
+                  <Route path="waste" element={<PortalFeaturePlaceholder name="Waste Analytics" description="Municipal landfills geospatial heatmaps." />} />
+                  <Route path="carbon" element={<PortalFeaturePlaceholder name="Carbon Reports" description="Official government audit database for carbon credit." />} />
                   <Route path="policies" element={<PortalFeaturePlaceholder name="Regulatory Policies" description="Set and adjust municipal waste regulatory limits." />} />
+                  <Route path="compliance" element={<PortalFeaturePlaceholder name="Compliance Audits" description="Environmental enforcement and auditing." />} />
                   <Route path="settings" element={<PortalFeaturePlaceholder name="Government Panel Settings" description="Configure public interface accessibility targets." />} />
                 </Route>
               </Route>
@@ -140,16 +147,30 @@ function App() {
               <Route element={<RoleRoute allowedRoles={['ADMIN', 'SUPER_ADMIN']} />}>
                 <Route path="admin" element={<AdminLayout />}>
                   <Route index element={<AdminHome />} />
-                  <Route path="users" element={<AdminHome />} />
-                  <Route path="objects" element={<PortalFeaturePlaceholder name="Global Objects Ledger" description="Master administrative control center for physical objects." />} />
-                  <Route path="reports" element={<PortalFeaturePlaceholder name="Reports Console" description="Generate system usage audits and carbon reports." />} />
+                  <Route path="users" element={<PortalFeaturePlaceholder name="User Management" description="Manage platform users and roles." />} />
+                  <Route path="inventory" element={<PortalFeaturePlaceholder name="Global Inventory" description="Master administrative control center for physical objects." />} />
                   <Route path="marketplace" element={<PortalFeaturePlaceholder name="Marketplace Monitor" description="Observe transaction logs and listings." />} />
-                  <Route path="moderation" element={<PortalFeaturePlaceholder name="System Moderation" description="Review flagged objects, user complaints, and escalations." />} />
-                  <Route path="partners" element={<PortalFeaturePlaceholder name="Partner Directory" description="Manage relations with NGOs, repair partners, and recyclers." />} />
+                  <Route path="partners" element={<PortalFeaturePlaceholder name="Partner Directory" description="Manage relations with corporate and repair partners." />} />
+                  <Route path="ngos" element={<PortalFeaturePlaceholder name="NGO Directory" description="Manage registered NGOs and distribution networks." />} />
+                  <Route path="reports" element={<PortalFeaturePlaceholder name="Reports Console" description="Generate system usage audits and carbon reports." />} />
                   <Route path="analytics" element={<PortalFeaturePlaceholder name="System Analytics" description="System telemetry graphs and database performance benchmarks." />} />
                   <Route path="carbon" element={<PortalFeaturePlaceholder name="Carbon Ledger" description="Manage carbon credit distribution rates and transaction logs." />} />
                   <Route path="support" element={<PortalFeaturePlaceholder name="Helpdesk Support" description="Ticket queue for users requiring technical support." />} />
                   <Route path="settings" element={<PortalFeaturePlaceholder name="Admin Settings" description="Override permissions and security parameters." />} />
+                </Route>
+              </Route>
+            </Route>
+
+            {/* Secure Super Admin Portal */}
+            <Route element={<PrivateRoute />}>
+              <Route element={<RoleRoute allowedRoles={['SUPER_ADMIN']} />}>
+                <Route path="superadmin" element={<SuperAdminLayout />}>
+                  <Route index element={<PortalFeaturePlaceholder name="God Mode Dashboard" description="Full master system telemetry." />} />
+                  <Route path="telemetry" element={<PortalFeaturePlaceholder name="System Telemetry" description="Realtime system health streams." />} />
+                  <Route path="logs" element={<PortalFeaturePlaceholder name="Database Logs" description="Direct database inspection." />} />
+                  <Route path="api" element={<PortalFeaturePlaceholder name="API Console" description="Direct execution of GraphQL/REST nodes." />} />
+                  <Route path="servers" element={<PortalFeaturePlaceholder name="Server Fleet" description="Manage underlying Kubernetes node infrastructure." />} />
+                  <Route path="settings" element={<PortalFeaturePlaceholder name="Global Configurations" description="Master feature flags and kill switches." />} />
                 </Route>
               </Route>
             </Route>
@@ -159,13 +180,13 @@ function App() {
               <Route element={<RoleRoute allowedRoles={['NGO', 'ADMIN', 'SUPER_ADMIN']} />}>
                 <Route path="ngo" element={<NgoLayout />}>
                   <Route index element={<NgoDashboard />} />
-                  <Route path="requests" element={<PortalFeaturePlaceholder name="Donation Requests" description="Active material donation requests." />} />
+                  <Route path="donations" element={<PortalFeaturePlaceholder name="Donations Management" description="Manage incoming material donations." />} />
+                  <Route path="receivers" element={<PortalFeaturePlaceholder name="Receiver Registry" description="Registry of final target charities." />} />
                   <Route path="inventory" element={<PortalFeaturePlaceholder name="Inventory Stockpile" description="Stored resources and sorted material streams." />} />
-                  <Route path="receivers" element={<PortalFeaturePlaceholder name="Receiver NGOs" description="Registry of final target charities." />} />
-                  <Route path="donors" element={<PortalFeaturePlaceholder name="Donor Registry" description="Log of corporate and individual carbon donors." />} />
+                  <Route path="distribution" element={<PortalFeaturePlaceholder name="Distribution Networks" description="Manage logistics and distribution channels." />} />
                   <Route path="deliveries" element={<PortalFeaturePlaceholder name="Logistics & Deliveries" description="Courier manifest tracking." />} />
-                  <Route path="reports" element={<PortalFeaturePlaceholder name="Impact Reports" description="Generate annual reports." /> } />
-                  <Route path="impact" element={<PortalFeaturePlaceholder name="Community Impact" description="Ledger of carbon offsets saved by NGOs." />} />
+                  <Route path="reports" element={<PortalFeaturePlaceholder name="Impact Reports" description="Generate annual and community impact reports." /> } />
+                  <Route path="partners" element={<PortalFeaturePlaceholder name="Partner Directory" description="Network of repair and recycling partners." />} />
                   <Route path="settings" element={<PortalFeaturePlaceholder name="NGO Settings" description="Profile and notification configurations." />} />
                 </Route>
               </Route>
@@ -176,6 +197,13 @@ function App() {
               <Route element={<RoleRoute allowedRoles={['REPAIR_PARTNER', 'ADMIN', 'SUPER_ADMIN']} />}>
                 <Route path="repair" element={<RepairLayout />}>
                   <Route index element={<RepairDashboard />} />
+                  <Route path="jobs" element={<PortalFeaturePlaceholder name="Repair Jobs" description="Active and queued repair tickets." />} />
+                  <Route path="customers" element={<PortalFeaturePlaceholder name="Customers" description="Customer directory and feedback logs." />} />
+                  <Route path="inventory" element={<PortalFeaturePlaceholder name="Parts Inventory" description="Track hardware replacement parts." />} />
+                  <Route path="invoices" element={<PortalFeaturePlaceholder name="Invoices" description="Billing and payment histories." />} />
+                  <Route path="technicians" element={<PortalFeaturePlaceholder name="Technicians" description="Manage repair staff and schedules." />} />
+                  <Route path="analytics" element={<PortalFeaturePlaceholder name="Analytics" description="Revenue and turnaround time metrics." />} />
+                  <Route path="settings" element={<PortalFeaturePlaceholder name="Settings" description="Workshop configurations." />} />
                 </Route>
               </Route>
             </Route>
@@ -185,6 +213,13 @@ function App() {
               <Route element={<RoleRoute allowedRoles={['RECYCLER', 'ADMIN', 'SUPER_ADMIN']} />}>
                 <Route path="recycler" element={<RecyclerLayout />}>
                   <Route index element={<RecyclerDashboard />} />
+                  <Route path="pickups" element={<PortalFeaturePlaceholder name="Pickup Requests" description="Schedule waste material collection." />} />
+                  <Route path="materials" element={<PortalFeaturePlaceholder name="Materials" description="Sorted waste stream categories." />} />
+                  <Route path="processing" element={<PortalFeaturePlaceholder name="Processing" description="Material breakdown and recovery rates." />} />
+                  <Route path="carbon" element={<PortalFeaturePlaceholder name="Carbon Reports" description="Calculated carbon offset logs." />} />
+                  <Route path="certificates" element={<PortalFeaturePlaceholder name="Certificates" description="Issued recycling compliance certificates." />} />
+                  <Route path="analytics" element={<PortalFeaturePlaceholder name="Analytics" description="Facility throughput and efficiency." />} />
+                  <Route path="settings" element={<PortalFeaturePlaceholder name="Settings" description="Recycling plant configurations." />} />
                 </Route>
               </Route>
             </Route>
@@ -194,6 +229,13 @@ function App() {
               <Route element={<RoleRoute allowedRoles={['SELLER', 'ADMIN', 'SUPER_ADMIN']} />}>
                 <Route path="seller" element={<SellerLayout />}>
                   <Route index element={<SellerDashboard />} />
+                  <Route path="products" element={<PortalFeaturePlaceholder name="Products" description="Manage marketplace listings and inventory." />} />
+                  <Route path="orders" element={<PortalFeaturePlaceholder name="Orders" description="Fulfillment and shipping logistics." />} />
+                  <Route path="customers" element={<PortalFeaturePlaceholder name="Customers" description="Customer messages and CRM." />} />
+                  <Route path="analytics" element={<PortalFeaturePlaceholder name="Analytics" description="Storefront traffic and conversion rates." />} />
+                  <Route path="revenue" element={<PortalFeaturePlaceholder name="Revenue" description="Detailed financial tracking and accounting." />} />
+                  <Route path="payouts" element={<PortalFeaturePlaceholder name="Payouts" description="Bank deposits and transaction history." />} />
+                  <Route path="settings" element={<PortalFeaturePlaceholder name="Settings" description="Storefront branding and configurations." />} />
                 </Route>
               </Route>
             </Route>

@@ -1,46 +1,35 @@
 import * as React from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { EosSidebar } from '@earthos/ui';
-import { Wrench, Hammer, Settings2, BarChart } from 'lucide-react';
-import { useAuthStore } from '../stores/authStore';
+import { 
+  Wrench, 
+  Users, 
+  Package, 
+  FileText, 
+  HardHat, 
+  LineChart, 
+  Settings as SettingsIcon,
+  LayoutDashboard
+} from 'lucide-react';
+import { PortalLayoutTemplate } from '../components/layout/PortalLayoutTemplate';
 
 export const RepairLayout: React.FC = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const logout = useAuthStore((state) => state.logout);
-
   const menuItems = [
-    { label: 'Overview', href: '/dashboard/repair', icon: <BarChart size={18} /> },
-    { label: 'Active Repairs', href: '/dashboard/repair/active', icon: <Wrench size={18} /> },
-    { label: 'Parts Inventory', href: '/dashboard/repair/parts', icon: <Hammer size={18} /> },
-    { label: 'Diagnostics', href: '/dashboard/repair/diagnostics', icon: <Settings2 size={18} /> }
+    { label: 'Dashboard', href: '/dashboard/repair', icon: <LayoutDashboard size={18} /> },
+    { label: 'Repair Jobs', href: '/dashboard/repair/jobs', icon: <Wrench size={18} /> },
+    { label: 'Customers', href: '/dashboard/repair/customers', icon: <Users size={18} /> },
+    { label: 'Inventory', href: '/dashboard/repair/inventory', icon: <Package size={18} /> },
+    { label: 'Invoices', href: '/dashboard/repair/invoices', icon: <FileText size={18} /> },
+    { label: 'Technicians', href: '/dashboard/repair/technicians', icon: <HardHat size={18} /> },
+    { label: 'Analytics', href: '/dashboard/repair/analytics', icon: <LineChart size={18} /> },
+    { label: 'Settings', href: '/dashboard/repair/settings', icon: <SettingsIcon size={18} /> }
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-amber-50/5 dark:bg-[#0B1220]">
-      <EosSidebar
-        items={menuItems}
-        activeHref={location.pathname}
-        onItemClick={(href) => navigate(href)}
-        onLogoutClick={() => {
-          logout();
-          navigate('/');
-        }}
-        orgName="REPAIR PORTAL"
-        logoIcon={<Wrench size={24} className="text-amber-500" />}
-      />
-
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 border-b border-amber-500/10 flex items-center justify-between px-8 bg-white/50 dark:bg-[#162033]/20 backdrop-blur-md">
-          <span className="font-semibold text-sm text-amber-600 dark:text-amber-400">
-            SECURE REPAIR CONSOLE
-          </span>
-        </header>
-
-        <main className="flex-1 overflow-y-auto p-8">
-          <Outlet />
-        </main>
-      </div>
-    </div>
+    <PortalLayoutTemplate
+      menuItems={menuItems}
+      orgName="REPAIR PORTAL"
+      headerTitle="SECURE REPAIR CONSOLE"
+      logoIcon={<Wrench size={24} className="text-amber-500" />}
+      themeColorClassName="bg-amber-50/5 dark:bg-[#0B1220]"
+    />
   );
 };

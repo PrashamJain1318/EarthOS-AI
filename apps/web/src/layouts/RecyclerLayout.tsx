@@ -1,46 +1,36 @@
 import * as React from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { EosSidebar } from '@earthos/ui';
-import { Recycle, Factory, Truck, Activity } from 'lucide-react';
-import { useAuthStore } from '../stores/authStore';
+import { 
+  Recycle, 
+  Truck, 
+  Box, 
+  Settings2, 
+  FileText, 
+  Award, 
+  LineChart, 
+  Settings as SettingsIcon,
+  LayoutDashboard
+} from 'lucide-react';
+import { PortalLayoutTemplate } from '../components/layout/PortalLayoutTemplate';
 
 export const RecyclerLayout: React.FC = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const logout = useAuthStore((state) => state.logout);
-
   const menuItems = [
-    { label: 'Overview', href: '/dashboard/recycler', icon: <Activity size={18} /> },
-    { label: 'Sorting Lines', href: '/dashboard/recycler/sorting', icon: <Factory size={18} /> },
-    { label: 'Material Yield', href: '/dashboard/recycler/yield', icon: <Recycle size={18} /> },
-    { label: 'Logistics', href: '/dashboard/recycler/logistics', icon: <Truck size={18} /> }
+    { label: 'Dashboard', href: '/dashboard/recycler', icon: <LayoutDashboard size={18} /> },
+    { label: 'Pickup Requests', href: '/dashboard/recycler/pickups', icon: <Truck size={18} /> },
+    { label: 'Materials', href: '/dashboard/recycler/materials', icon: <Box size={18} /> },
+    { label: 'Processing', href: '/dashboard/recycler/processing', icon: <Settings2 size={18} /> },
+    { label: 'Carbon Reports', href: '/dashboard/recycler/carbon', icon: <FileText size={18} /> },
+    { label: 'Certificates', href: '/dashboard/recycler/certificates', icon: <Award size={18} /> },
+    { label: 'Analytics', href: '/dashboard/recycler/analytics', icon: <LineChart size={18} /> },
+    { label: 'Settings', href: '/dashboard/recycler/settings', icon: <SettingsIcon size={18} /> }
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-cyan-50/5 dark:bg-[#0B1220]">
-      <EosSidebar
-        items={menuItems}
-        activeHref={location.pathname}
-        onItemClick={(href) => navigate(href)}
-        onLogoutClick={() => {
-          logout();
-          navigate('/');
-        }}
-        orgName="RECYCLER PORTAL"
-        logoIcon={<Recycle size={24} className="text-cyan-500" />}
-      />
-
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 border-b border-cyan-500/10 flex items-center justify-between px-8 bg-white/50 dark:bg-[#162033]/20 backdrop-blur-md">
-          <span className="font-semibold text-sm text-cyan-600 dark:text-cyan-400">
-            SECURE RECYCLER CONSOLE
-          </span>
-        </header>
-
-        <main className="flex-1 overflow-y-auto p-8">
-          <Outlet />
-        </main>
-      </div>
-    </div>
+    <PortalLayoutTemplate
+      menuItems={menuItems}
+      orgName="RECYCLER PORTAL"
+      headerTitle="SECURE RECYCLER HUB"
+      logoIcon={<Recycle size={24} className="text-cyan-500" />}
+      themeColorClassName="bg-cyan-50/5 dark:bg-[#0B1220]"
+    />
   );
 };
