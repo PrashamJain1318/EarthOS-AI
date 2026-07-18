@@ -4,16 +4,16 @@ import { useAuthStore } from '../stores/authStore';
 import { UserRole } from '@earthos/types';
 import { EosErrorPage } from '@earthos/ui';
 
-const roleRoutes: Record<UserRole, string> = {
-  USER: '/dashboard/user',
-  NGO: '/dashboard/ngo',
-  REPAIR_PARTNER: '/dashboard/repair',
-  RECYCLER: '/dashboard/recycler',
-  SELLER: '/dashboard/seller',
-  ENTERPRISE: '/dashboard/enterprise',
-  GOVERNMENT: '/dashboard/government',
-  ADMIN: '/dashboard/admin',
-  SUPER_ADMIN: '/dashboard/superadmin'
+export const roleRoutes: Record<UserRole, string> = {
+  USER: '/portal/user/dashboard',
+  NGO: '/portal/ngo/dashboard',
+  REPAIR_PARTNER: '/portal/repair/dashboard',
+  RECYCLER: '/portal/recycler/dashboard',
+  SELLER: '/portal/seller/dashboard',
+  ENTERPRISE: '/portal/enterprise/dashboard',
+  GOVERNMENT: '/portal/government/dashboard',
+  ADMIN: '/portal/admin/dashboard',
+  SUPER_ADMIN: '/portal/super-admin/dashboard'
 };
 
 // 1. PrivateRoute: Enforces authenticated session to access paths
@@ -30,7 +30,7 @@ export const GuestRoute: React.FC = () => {
     return <Outlet />;
   }
 
-  const destination = user ? roleRoutes[user.role] : '/dashboard/user';
+  const destination = user && roleRoutes[user.role] ? roleRoutes[user.role] : '/invalid-role';
   return <Navigate to={destination} replace />;
 };
 
@@ -70,6 +70,6 @@ export const AppRedirect: React.FC = () => {
     return <Navigate to="/login" replace />;
   }
 
-  const destination = user ? roleRoutes[user.role] : '/dashboard/user';
+  const destination = user && roleRoutes[user.role] ? roleRoutes[user.role] : '/invalid-role';
   return <Navigate to={destination} replace />;
 };
