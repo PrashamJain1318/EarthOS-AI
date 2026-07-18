@@ -11,9 +11,9 @@ export const EnterpriseLayout: React.FC = () => {
   const logout = useAuthStore((state) => state.logout);
 
   const menuItems = [
-    { label: 'Scope 3 Overview', href: '/enterprise', icon: <BarChart3 size={18} /> },
-    { label: 'Material Streams', href: '/enterprise/streams', icon: <Briefcase size={18} /> },
-    { label: 'Integration Settings', href: '/enterprise/settings', icon: <Settings size={18} /> }
+    { label: 'Scope 3 Overview', href: '/dashboard/enterprise', icon: <BarChart3 size={18} /> },
+    { label: 'Material Streams', href: '/dashboard/enterprise/streams', icon: <Briefcase size={18} /> },
+    { label: 'Integration Settings', href: '/dashboard/enterprise/settings', icon: <Settings size={18} /> }
   ];
 
   return (

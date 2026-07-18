@@ -1,10 +1,9 @@
 export type UserRole = 
-  | 'GUEST' 
   | 'USER' 
   | 'NGO' 
-  | 'REPAIR_SHOP' 
+  | 'REPAIR_PARTNER' 
   | 'RECYCLER' 
-  | 'PICKUP_PARTNER' 
+  | 'SELLER' 
   | 'ENTERPRISE' 
   | 'GOVERNMENT' 
   | 'ADMIN' 

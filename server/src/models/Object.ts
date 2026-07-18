@@ -26,7 +26,7 @@ export interface IObject extends Omit<Document, 'model'> {
   objectId: string;
   objectName: string;
   description?: string;
-  category: typeof OBJECT_CATEGORIES[number];
+  category: string;
   subCategory?: string;
   brand?: string;
   model?: string;
@@ -38,6 +38,22 @@ export interface IObject extends Omit<Document, 'model'> {
   condition: typeof OBJECT_CONDITIONS[number];
   quantity: number;
   warrantyExpiry?: Date;
+  warranty?: {
+    provider?: string;
+    contact?: string;
+    documents: string[];
+    reminders: number[];
+  };
+  maintenanceRecords: {
+    recordId: string;
+    title: string;
+    type: 'REPAIR' | 'PREVENTATIVE' | 'UPGRADE' | 'INSPECTION';
+    date: Date;
+    cost?: number;
+    technicianNotes?: string;
+    receipts: string[];
+    status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  }[];
   maintenanceDate?: Date;
   location?: {
     address?: string;
@@ -99,7 +115,6 @@ const ObjectSchema = new Schema<IObject>({
   },
   category: {
     type: String,
-    enum: OBJECT_CATEGORIES,
     required: [true, 'Category is required.'],
     index: true
   },
@@ -151,6 +166,35 @@ const ObjectSchema = new Schema<IObject>({
     min: [1, 'Quantity must be at least 1.']
   },
   warrantyExpiry: { type: Date },
+  warranty: {
+    provider: { type: String, trim: true, maxlength: 100 },
+    contact: { type: String, trim: true, maxlength: 200 },
+    documents: {
+      type: [String],
+      default: [],
+      validate: {
+        validator: (v: string[]) => v.length <= 5,
+        message: 'Cannot have more than 5 warranty documents.'
+      }
+    },
+    reminders: {
+      type: [Number],
+      default: []
+    }
+  },
+  maintenanceRecords: {
+    type: [{
+      recordId: { type: String, required: true },
+      title: { type: String, required: true, trim: true, maxlength: 150 },
+      type: { type: String, enum: ['REPAIR', 'PREVENTATIVE', 'UPGRADE', 'INSPECTION'], required: true },
+      date: { type: Date, required: true },
+      cost: { type: Number, min: 0 },
+      technicianNotes: { type: String, trim: true, maxlength: 2000 },
+      receipts: { type: [String], default: [] },
+      status: { type: String, enum: ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'], default: 'COMPLETED' }
+    }],
+    default: []
+  },
   maintenanceDate: { type: Date },
   location: { type: LocationSchema },
   tags: {

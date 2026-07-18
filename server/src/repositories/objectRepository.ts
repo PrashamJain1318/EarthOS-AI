@@ -142,10 +142,18 @@ export const objectRepository = {
   async filter(userId: string, filters: Record<string, any>, options: PaginationOptions): Promise<PaginatedResult<IObject>> {
     const { page, limit, sortBy, sortOrder } = options;
     const skip = (page - 1) * limit;
-    const sort: Record<string, SortOrder> = { [sortBy]: sortOrder };
+    let sort: Record<string, SortOrder> = { [sortBy]: sortOrder };
 
     // Build dynamic Mongo query from filter params
     const query: FilterQuery<IObject> = { userId, archived: false };
+
+    if (filters.q) {
+      query.$text = { $search: filters.q };
+      // Override sort to relevance if sorting by default (createdAt)
+      if (sortBy === 'createdAt') {
+        sort = { score: { $meta: 'textScore' } as any };
+      }
+    }
 
     if (filters.category)          query.category = filters.category;
     if (filters.condition)         query.condition = filters.condition;
@@ -153,6 +161,41 @@ export const objectRepository = {
     if (filters.donationStatus)    query.donationStatus = filters.donationStatus;
     if (filters.marketplaceStatus) query.marketplaceStatus = filters.marketplaceStatus;
     if (filters.archived !== undefined) query.archived = filters.archived;
+
+    // String Regex Matching
+    if (filters.name)         query.objectName = { $regex: filters.name, $options: 'i' };
+    if (filters.brand)        query.brand = { $regex: filters.brand, $options: 'i' };
+    if (filters.model)        query.model = { $regex: filters.model, $options: 'i' };
+    if (filters.serialNumber) query.serialNumber = { $regex: filters.serialNumber, $options: 'i' };
+    
+    // Location Search (matches city or country)
+    if (filters.location) {
+      query.$or = [
+        { 'location.city': { $regex: filters.location, $options: 'i' } },
+        { 'location.country': { $regex: filters.location, $options: 'i' } },
+        { 'location.state': { $regex: filters.location, $options: 'i' } }
+      ];
+    }
+
+    // Date Ranges
+    if (filters.minPurchaseDate || filters.maxPurchaseDate) {
+      query.purchaseDate = {};
+      if (filters.minPurchaseDate) query.purchaseDate.$gte = new Date(filters.minPurchaseDate);
+      if (filters.maxPurchaseDate) query.purchaseDate.$lte = new Date(filters.maxPurchaseDate);
+    }
+
+    // Warranty
+    if (filters.hasWarranty !== undefined) {
+      if (filters.hasWarranty) {
+        query.warrantyExpiry = { $gt: new Date() };
+      } else {
+        query.$or = [
+          { warrantyExpiry: { $exists: false } },
+          { warrantyExpiry: null },
+          { warrantyExpiry: { $lte: new Date() } }
+        ];
+      }
+    }
 
     // Price range
     if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
@@ -180,8 +223,12 @@ export const objectRepository = {
       query.tags = { $in: filters.tags };
     }
 
+    const projection = query.$text && (!options.sortBy || options.sortBy === 'createdAt')
+      ? { score: { $meta: 'textScore' } }
+      : {};
+
     const [data, total] = await Promise.all([
-      ObjectModel.find(query)
+      ObjectModel.find(query, projection)
         .sort(sort)
         .skip(skip)
         .limit(limit)

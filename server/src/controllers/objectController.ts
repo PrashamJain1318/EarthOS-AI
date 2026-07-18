@@ -106,11 +106,20 @@ export const objectController = {
 
       // Collect potential filter values from query parameters
       const filterInput = filterSchema.parse({
+        q: req.query.q,
+        name: req.query.name,
+        brand: req.query.brand,
+        model: req.query.model,
+        serialNumber: req.query.serialNumber,
+        location: req.query.location,
         category: req.query.category,
         condition: req.query.condition,
         lifecycleStage: req.query.lifecycleStage,
         donationStatus: req.query.donationStatus,
         marketplaceStatus: req.query.marketplaceStatus,
+        hasWarranty: req.query.hasWarranty,
+        minPurchaseDate: req.query.minPurchaseDate,
+        maxPurchaseDate: req.query.maxPurchaseDate,
         archived: req.query.archived,
         minPrice: req.query.minPrice,
         maxPrice: req.query.maxPrice,

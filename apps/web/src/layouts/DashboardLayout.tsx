@@ -9,23 +9,24 @@ import {
   ScanLine, 
   BookOpen, 
   ShoppingBag, 
-  MessageSquare, 
-  Globe, 
-  Users,
   Wallet,
   Settings as SettingsIcon,
   Search,
-  Bell,
   Sun,
   Moon,
   Plus,
   PanelRight,
   TrendingUp,
   Sparkles,
-  AlertCircle
+  AlertCircle,
+  Wrench,
+  Heart,
+  Bell,
+  User as UserIcon
 } from 'lucide-react';
 import { useUiStore } from '../stores/uiStore';
 import { useAuthStore } from '../stores/authStore';
+import { NotificationDropdown } from '../components/layout/NotificationDropdown';
 
 export const DashboardLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -36,17 +37,17 @@ export const DashboardLayout: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const menuItems = [
-    { label: 'Overview', href: '/dashboard', icon: <LayoutDashboard size={18} /> },
-    { label: 'Analytics', href: '/analytics', icon: <TrendingUp size={18} /> },
-    { label: 'My Objects', href: '/objects', icon: <Package size={18} /> },
-    { label: 'AI Scanner', href: '/scanner', icon: <ScanLine size={18} /> },
-    { label: 'Earth Passport', href: '/passport', icon: <BookOpen size={18} /> },
-    { label: 'Marketplace', href: '/marketplace', icon: <ShoppingBag size={18} /> },
-    { label: 'EarthGPT', href: '/earthgpt', icon: <MessageSquare size={18} /> },
-    { label: 'Carbon Wallet', href: '/wallet', icon: <Wallet size={18} /> },
-    { label: 'Earth Twin', href: '/earth-twin', icon: <Globe size={18} /> },
-    { label: 'Community', href: '/community', icon: <Users size={18} /> },
-    { label: 'Settings', href: '/settings', icon: <SettingsIcon size={18} /> }
+    { label: 'Dashboard', href: '/dashboard/user', icon: <LayoutDashboard size={18} /> },
+    { label: 'My Objects', href: '/dashboard/user/objects', icon: <Package size={18} /> },
+    { label: 'AI Scanner', href: '/dashboard/user/scanner', icon: <ScanLine size={18} /> },
+    { label: 'Digital Passport', href: '/dashboard/user/passport', icon: <BookOpen size={18} /> },
+    { label: 'Marketplace', href: '/dashboard/user/marketplace', icon: <ShoppingBag size={18} /> },
+    { label: 'Repair', href: '/dashboard/user/repair', icon: <Wrench size={18} /> },
+    { label: 'Donate', href: '/dashboard/user/donate', icon: <Heart size={18} /> },
+    { label: 'Carbon Wallet', href: '/dashboard/user/wallet', icon: <Wallet size={18} /> },
+    { label: 'Notifications', href: '/dashboard/user/notifications', icon: <Bell size={18} /> },
+    { label: 'Profile', href: '/dashboard/user/profile', icon: <UserIcon size={18} /> },
+    { label: 'Settings', href: '/dashboard/user/settings', icon: <SettingsIcon size={18} /> }
   ];
 
   return (
@@ -104,13 +105,7 @@ export const DashboardLayout: React.FC = () => {
             </EosButton>
 
             {/* Notifications Alert center */}
-            <button 
-              className="p-2 rounded-lg border border-[#B0BEC5]/20 dark:border-[#263238]/30 bg-white/50 dark:bg-black/10 text-gray-500 hover:text-[#1F2937] dark:hover:text-[#F8FAFC] relative transition-colors"
-              aria-label="Alert system notifications"
-            >
-              <Bell size={18} />
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-            </button>
+            <NotificationDropdown />
 
             {/* Theme Toggle Trigger */}
             <button
