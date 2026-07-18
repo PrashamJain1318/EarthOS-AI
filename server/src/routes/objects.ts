@@ -1,27 +1,23 @@
-import { Router, Request, Response } from 'express';
-import { logger } from '../config/logger';
+import { Router } from 'express';
+import { objectController } from '../controllers/objectController';
+import { authMiddleware } from '../middlewares/auth';
 
 export const objectsRouter = Router();
 
-objectsRouter.get('/', (req: Request, res: Response) => {
-  logger.info('📦 Query registered material objects catalog list.');
-  res.status(200).json({
-    success: true,
-    data: {
-      objects: []
-    }
-  });
-});
+// Protect all resource object endpoints
+objectsRouter.use(authMiddleware);
 
-objectsRouter.post('/', (req: Request, res: Response) => {
-  logger.info('📦 Registering new physical object batch stream.');
-  res.status(201).json({
-    success: true,
-    data: {
-      id: 'object_registered_uuid_placeholder',
-      status: 'REGISTERED'
-    }
-  });
-});
+// Core CRUD APIs
+objectsRouter.post('/', objectController.create);
+objectsRouter.get('/', objectController.getAll);
+
+// Dynamic Queries (placed before parameterized ID matches)
+objectsRouter.get('/search', objectController.search);
+objectsRouter.get('/filter', objectController.filter);
+
+// Specific Object Parameter matches
+objectsRouter.get('/:id', objectController.getById);
+objectsRouter.put('/:id', objectController.update);
+objectsRouter.delete('/:id', objectController.remove);
 
 export default objectsRouter;
