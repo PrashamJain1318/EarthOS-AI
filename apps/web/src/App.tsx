@@ -25,6 +25,7 @@ import { VerifyEmail } from './pages/VerifyEmail';
 
 import { Dashboard } from './pages/Dashboard';
 import { Objects } from './pages/Objects';
+import { AddObject } from './pages/AddObject';
 import { Scanner } from './pages/Scanner';
 import { Passport } from './pages/Passport';
 import { Marketplace } from './pages/Marketplace';
@@ -76,6 +77,7 @@ function App() {
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="analytics" element={<Analytics />} />
                 <Route path="objects" element={<Objects />} />
+                <Route path="objects/new" element={<AddObject />} />
                 <Route path="scanner" element={<Scanner />} />
                 <Route path="passport" element={<Passport />} />
                 <Route path="marketplace" element={<Marketplace />} />
