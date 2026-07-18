@@ -6,8 +6,9 @@ import { env } from './config/env';
 import { logger } from './config/logger';
 import { connectDatabases } from './config/db';
 import { globalErrorHandler } from './middlewares/errors';
-import { authRouter } from './routes/auth';
-import { objectsRouter } from './routes/objects';
+import authRoutes from './routes/auth';
+import objectRoutes from './routes/objects';
+import taxonomyRoutes from './routes/taxonomy';
 
 const app = express();
 
@@ -52,8 +53,9 @@ app.get('/health', (req, res) => {
 });
 
 // App Router mount registries
-app.use('/api/v1/auth', authRouter);
-app.use('/api/v1/objects', objectsRouter);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/objects', objectRoutes);
+app.use('/api/v1/taxonomy', taxonomyRoutes);
 
 // Global Error Interceptor middleware
 app.use(globalErrorHandler);

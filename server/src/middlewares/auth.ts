@@ -53,4 +53,37 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
   }
 }
 
+/**
+ * RBAC Authorization Middleware
+ * Factory function that returns a middleware checking if the authenticated
+ * user's role exists in the provided array of allowed roles.
+ */
+export function authorizeRoles(allowedRoles: string[]) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'User is not authenticated.'
+        }
+      });
+      return;
+    }
+
+    if (!allowedRoles.includes(req.user.role)) {
+      res.status(403).json({
+        success: false,
+        error: {
+          code: 'FORBIDDEN',
+          message: 'User lacks the required role to access this resource.'
+        }
+      });
+      return;
+    }
+
+    next();
+  };
+}
+
 export default authMiddleware;

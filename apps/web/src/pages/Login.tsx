@@ -60,13 +60,13 @@ export const Login: React.FC = () => {
         );
 
         if (role === 'ENTERPRISE') {
-          navigate('/enterprise');
+          navigate('/dashboard/enterprise');
         } else if (role === 'GOVERNMENT') {
-          navigate('/government');
+          navigate('/dashboard/government');
         } else if (role === 'ADMIN') {
-          navigate('/admin');
+          navigate('/dashboard/admin');
         } else {
-          navigate('/dashboard');
+          navigate('/dashboard/user');
         }
       }
     }, 1500);

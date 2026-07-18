@@ -1,5 +1,6 @@
 import { objectRepository, PaginationOptions, PaginatedResult } from '../repositories/objectRepository';
 import { IObject } from '../models/Object';
+import { taxonomyService } from './taxonomyService';
 
 export class AppValidationError extends Error {
   statusCode: number;
@@ -17,6 +18,13 @@ export const objectService = {
    * Registers a new resource object.
    */
   async createObject(userId: string, data: Partial<IObject>): Promise<IObject> {
+    if (data.tags) {
+      data.tags = await taxonomyService.processTags(data.tags);
+    }
+    if (data.category) {
+      await taxonomyService.processCategory(data.category, data.subCategory);
+    }
+
     const objectData = {
       ...data,
       userId: userId as any // force cast to matching mongoose type
@@ -46,6 +54,13 @@ export const objectService = {
    * Perform a partial update of a resource object.
    */
   async updateObject(id: string, userId: string, data: Partial<IObject>): Promise<IObject> {
+    if (data.tags) {
+      data.tags = await taxonomyService.processTags(data.tags);
+    }
+    if (data.category) {
+      await taxonomyService.processCategory(data.category, data.subCategory);
+    }
+
     const updated = await objectRepository.update(id, userId, data);
     if (!updated) {
       throw new AppValidationError('Object not found or access denied.', 'OBJECT_NOT_FOUND', 404);

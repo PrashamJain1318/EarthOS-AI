@@ -55,15 +55,19 @@ export const VerifyEmail: React.FC = () => {
           'mock_jwt_access_token'
         );
 
-        if (targetRole === 'ENTERPRISE') {
-          navigate('/enterprise');
-        } else if (targetRole === 'GOVERNMENT') {
-          navigate('/government');
-        } else if (targetRole === 'ADMIN' || targetRole === 'SUPER_ADMIN') {
-          navigate('/admin');
-        } else {
-          navigate('/dashboard');
-        }
+        const roleRoutes: Partial<Record<UserRole, string>> = {
+          USER: '/dashboard/user',
+          NGO: '/dashboard/ngo',
+          REPAIR_PARTNER: '/dashboard/repair',
+          RECYCLER: '/dashboard/recycler',
+          SELLER: '/dashboard/seller',
+          ENTERPRISE: '/dashboard/enterprise',
+          GOVERNMENT: '/dashboard/government',
+          ADMIN: '/dashboard/admin',
+          SUPER_ADMIN: '/dashboard/admin'
+        };
+        const destination = roleRoutes[targetRole] || '/dashboard/user';
+        navigate(destination);
       }
     }, 1500);
   };

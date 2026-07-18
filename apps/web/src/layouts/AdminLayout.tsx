@@ -1,7 +1,20 @@
 import * as React from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { EosSidebar } from '@earthos/ui';
-import { Shield, Users, AlertTriangle, FileSpreadsheet } from 'lucide-react';
+import { 
+  Shield, 
+  Users, 
+  Package, 
+  FileText, 
+  ShoppingBag, 
+  ShieldAlert, 
+  Handshake, 
+  LineChart, 
+  Flame, 
+  LifeBuoy, 
+  Settings as SettingsIcon,
+  LayoutDashboard
+} from 'lucide-react';
 
 import { useAuthStore } from '../stores/authStore';
 
@@ -11,9 +24,17 @@ export const AdminLayout: React.FC = () => {
   const logout = useAuthStore((state) => state.logout);
 
   const menuItems = [
-    { label: 'Users DB', href: '/admin', icon: <Users size={18} /> },
-    { label: 'System Logs', href: '/admin/logs', icon: <FileSpreadsheet size={18} /> },
-    { label: 'Flagged Tickets', href: '/admin/flags', icon: <AlertTriangle size={18} /> }
+    { label: 'Overview', href: '/dashboard/admin', icon: <LayoutDashboard size={18} /> },
+    { label: 'Users', href: '/dashboard/admin/users', icon: <Users size={18} /> },
+    { label: 'Objects', href: '/dashboard/admin/objects', icon: <Package size={18} /> },
+    { label: 'Reports', href: '/dashboard/admin/reports', icon: <FileText size={18} /> },
+    { label: 'Marketplace', href: '/dashboard/admin/marketplace', icon: <ShoppingBag size={18} /> },
+    { label: 'Moderation', href: '/dashboard/admin/moderation', icon: <ShieldAlert size={18} /> },
+    { label: 'Partners', href: '/dashboard/admin/partners', icon: <Handshake size={18} /> },
+    { label: 'Analytics', href: '/dashboard/admin/analytics', icon: <LineChart size={18} /> },
+    { label: 'Carbon Statistics', href: '/dashboard/admin/carbon', icon: <Flame size={18} /> },
+    { label: 'Support', href: '/dashboard/admin/support', icon: <LifeBuoy size={18} /> },
+    { label: 'Settings', href: '/dashboard/admin/settings', icon: <SettingsIcon size={18} /> }
   ];
 
   return (

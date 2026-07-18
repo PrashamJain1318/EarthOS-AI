@@ -7,7 +7,7 @@ const UserSchema = new Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   role: { 
     type: String, 
-    enum: ['GUEST', 'USER', 'NGO', 'REPAIR_SHOP', 'RECYCLER', 'PICKUP_PARTNER', 'ENTERPRISE', 'GOVERNMENT', 'ADMIN', 'SUPER_ADMIN'],
+    enum: ['USER', 'NGO', 'REPAIR_PARTNER', 'RECYCLER', 'SELLER', 'ENTERPRISE', 'GOVERNMENT', 'ADMIN', 'SUPER_ADMIN'],
     default: 'USER'
   },
   password: { type: String, required: true },

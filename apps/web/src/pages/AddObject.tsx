@@ -18,30 +18,37 @@ import {
   UploadCloud, 
   Trash2, 
   ArrowLeft, 
-  Plus, 
   Globe, 
   Calendar,
   MapPin,
-  FileText
+  FileText,
+  AlertCircle,
+  ShieldCheck
 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
-
-const CATEGORIES = [
-  'ELECTRONICS', 'TEXTILES', 'METALS', 'PLASTICS',
-  'ORGANICS', 'GLASS', 'PAPER', 'WOOD', 'CHEMICALS', 'OTHER'
-] as const;
+import { SmartTagInput } from '../components/ui/SmartTagInput';
+import { CategoryAutocomplete } from '../components/ui/CategoryAutocomplete';
 
 const CONDITIONS = [
   'NEW', 'LIKE_NEW', 'GOOD', 'FAIR', 'POOR', 'DAMAGED', 'NON_FUNCTIONAL'
 ] as const;
 
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
+};
+
 // ─── Client Validation Schema ────────────────────────────
 
 const objectFormSchema = z.object({
   objectName: z.string().min(1, 'Object name is required.').max(200),
-  description: z.string().max(2000).optional(),
-  category: z.enum(CATEGORIES, { errorMap: () => ({ message: 'Please select a category.' }) }),
-  subCategory: z.string().max(100).optional(),
+  description: z.string().max(2000).optional().nullable(),
+  category: z.string().min(1, 'Please select a category.'),
+  subCategory: z.string().max(100).optional().nullable(),
   brand: z.string().max(100).optional(),
   model: z.string().max(100).optional(),
   serialNumber: z.string().optional(),
@@ -58,6 +65,10 @@ const objectFormSchema = z.object({
     city: z.string().max(100).optional(),
     state: z.string().max(100).optional(),
     country: z.string().max(100).optional(),
+  }).optional(),
+  warranty: z.object({
+    provider: z.string().max(100).optional(),
+    contact: z.string().max(200).optional(),
   }).optional(),
   notes: z.string().max(5000).optional(),
 });
@@ -78,9 +89,9 @@ export const AddObject: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  // Tags chip state
+  // Tags and reminders state
   const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState('');
+  const [reminders, setReminders] = useState<number[]>([]);
 
   // Image Upload queue simulation state
   const [images, setImages] = useState<{ id: string; url: string; file: File; progress: number }[]>([]);
@@ -88,14 +99,16 @@ export const AddObject: React.FC = () => {
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors }
   } = useForm<ObjectFormValues>({
     resolver: zodResolver(objectFormSchema),
     defaultValues: {
-      category: 'ELECTRONICS',
       condition: 'GOOD',
       quantity: 1,
       currency: 'USD',
+      category: '',
       location: {
         address: '',
         city: '',
@@ -104,20 +117,6 @@ export const AddObject: React.FC = () => {
       }
     }
   });
-
-  // Handle Dynamic Tag addition
-  const handleAddTag = (e: React.KeyboardEvent | React.MouseEvent) => {
-    e.preventDefault();
-    const cleanTag = tagInput.trim().toUpperCase();
-    if (cleanTag && !tags.includes(cleanTag) && tags.length < 20) {
-      setTags([...tags, cleanTag]);
-      setTagInput('');
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter(t => t !== tagToRemove));
-  };
 
   // Image Upload handlers simulation
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,10 +157,11 @@ export const AddObject: React.FC = () => {
     setIsSubmitting(true);
     setApiError(null);
 
-    // Filter images that successfully finished upload simulation
-    const uploadedUrls = images
-      .filter(img => img.progress === 100)
-      .map((_, i) => `https://images.unsplash.com/photo-${1600000000000 + i}?auto=format&fit=crop&w=600&q=80`);
+    // Convert images to Base64
+    const validImages = images.filter(img => img.progress === 100);
+    const uploadedUrls = await Promise.all(
+      validImages.map(img => fileToBase64(img.file))
+    );
 
     // Fallback default image if none uploaded
     const finalImages = uploadedUrls.length > 0 ? uploadedUrls : [
@@ -171,6 +171,11 @@ export const AddObject: React.FC = () => {
     const finalPayload = {
       ...values,
       tags,
+      warranty: {
+        ...values.warranty,
+        reminders,
+        documents: [] // Documents handled in future upload integration
+      },
       images: finalImages,
       aiScore: Math.floor(65 + Math.random() * 30), // mock premium carbon-index metrics
       carbonScore: Math.floor(70 + Math.random() * 25),
@@ -266,39 +271,19 @@ export const AddObject: React.FC = () => {
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
-            <EosInput
-              label="Object/Asset Name"
-              placeholder="e.g. Recycled Copper Batch A-12"
-              error={errors.objectName?.message}
-              {...register('objectName')}
+            <EosInput label="Object Name" error={errors.objectName?.message} {...register('objectName')} />
+            
+            <CategoryAutocomplete 
+              category={watch('category')}
+              subCategory={watch('subCategory') || ''}
+              onChange={(cat, sub) => {
+                setValue('category', cat, { shouldValidate: true });
+                setValue('subCategory', sub || '', { shouldValidate: true });
+              }}
+              error={errors.category?.message}
             />
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-[#1F2937] dark:text-[#CBD5E1]">Resource Category</label>
-              <select
-                className="w-full px-4 py-2.5 bg-white dark:bg-[#162033] border border-[#B0BEC5] dark:border-[#263238] rounded-xl text-[#1F2937] dark:text-[#F8FAFC] focus:outline-none focus:border-[#2E7D32] transition-colors"
-                {...register('category')}
-              >
-                {CATEGORIES.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
-
-            <EosInput
-              label="Sub-Category"
-              placeholder="e.g. Heavy wires, High purity"
-              error={errors.subCategory?.message}
-              {...register('subCategory')}
-            />
-
-            <EosInput
-              label="Quantity"
-              type="number"
-              placeholder="1"
-              error={errors.quantity?.message}
-              {...register('quantity')}
-            />
+            <EosInput label="Quantity" type="number" error={errors.quantity?.message} {...register('quantity')} />
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -407,7 +392,51 @@ export const AddObject: React.FC = () => {
           </div>
         </EosCard>
 
-        {/* SECTION 4: Location & Origin Tracking */}
+        {/* SECTION 4: Warranty Details */}
+        <EosCard variant="glass" className="p-6 flex flex-col gap-6">
+          <div className="flex items-center gap-2 border-b border-[#B0BEC5]/20 dark:border-slate-800 pb-3">
+            <ShieldCheck size={18} className="text-[#2E7D32]" />
+            <Typography variant="h4" className="font-bold">Warranty Information</Typography>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <EosInput
+              label="Service Provider / Brand"
+              placeholder="e.g. Apple Care"
+              error={errors.warranty?.provider?.message}
+              {...register('warranty.provider')}
+            />
+
+            <EosInput
+              label="Contact Info"
+              placeholder="e.g. 1-800-MY-APPLE or support@apple.com"
+              error={errors.warranty?.contact?.message}
+              {...register('warranty.contact')}
+            />
+
+            <div className="md:col-span-2 flex flex-col gap-1.5">
+              <label className="text-sm font-semibold text-[#1F2937] dark:text-[#CBD5E1]">Expiry Reminders</label>
+              <div className="flex flex-wrap gap-3">
+                {[30, 14, 7, 1].map(days => (
+                  <label key={days} className="flex items-center gap-2 cursor-pointer bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 px-4 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={reminders.includes(days)}
+                      onChange={(e) => {
+                        if (e.target.checked) setReminders(prev => [...prev, days]);
+                        else setReminders(prev => prev.filter(d => d !== days));
+                      }}
+                      className="accent-[#2E7D32]"
+                    />
+                    <span className="text-sm font-medium">{days} Days Before</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+        </EosCard>
+
+        {/* SECTION 5: Location & Origin Tracking */}
         <EosCard variant="glass" className="p-6 flex flex-col gap-6">
           <div className="flex items-center gap-2 border-b border-[#B0BEC5]/20 dark:border-slate-800 pb-3">
             <MapPin size={18} className="text-[#2E7D32]" />
@@ -448,7 +477,7 @@ export const AddObject: React.FC = () => {
           </div>
         </EosCard>
 
-        {/* SECTION 5: Dynamic Tags & File Attachments */}
+        {/* SECTION 6: Dynamic Tags & File Attachments */}
         <EosCard variant="glass" className="p-6 flex flex-col gap-6">
           <div className="flex items-center gap-2 border-b border-[#B0BEC5]/20 dark:border-slate-800 pb-3">
             <Tag size={18} className="text-[#2E7D32]" />
@@ -458,38 +487,11 @@ export const AddObject: React.FC = () => {
           {/* Tags entry panel */}
           <div className="flex flex-col gap-2.5 text-left">
             <label className="text-sm font-semibold text-[#1F2937] dark:text-[#CBD5E1]">Asset Telemetry Tags</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="e.g. COPPER, CIRCULAR_A, BIO_A"
-                value={tagInput}
-                onChange={e => setTagInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleAddTag(e)}
-                className="flex-1 px-4 py-2 bg-white dark:bg-[#162033] border border-[#B0BEC5] dark:border-[#263238] rounded-xl text-[#1F2937] dark:text-[#F8FAFC] focus:outline-none focus:border-[#2E7D32] transition-colors text-sm"
-              />
-              <EosButton variant="secondary" onClick={handleAddTag} className="shrink-0 flex items-center gap-1 font-bold">
-                <Plus size={14} />
-                <span>Add Tag</span>
-              </EosButton>
-            </div>
-            
-            {/* Tags display grid */}
-            <div className="flex flex-wrap gap-1.5 mt-1.5">
-              {tags.map(tag => (
-                <span 
-                  key={tag}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold font-mono bg-[#2E7D32]/10 border border-[#2E7D32]/25 text-[#2E7D32]"
-                >
-                  <span>{tag}</span>
-                  <button type="button" onClick={() => handleRemoveTag(tag)} className="hover:text-red-500 transition-colors">
-                    &times;
-                  </button>
-                </span>
-              ))}
-              {tags.length === 0 && (
-                <span className="text-xs text-gray-400 italic">No tags associated yet.</span>
-              )}
-            </div>
+            <SmartTagInput 
+              tags={tags} 
+              onChange={setTags} 
+              maxTags={20} 
+            />
           </div>
 
           {/* Premium Image Upload Dropzone */}
@@ -549,7 +551,7 @@ export const AddObject: React.FC = () => {
           </div>
         </EosCard>
 
-        {/* SECTION 6: Notes Area */}
+        {/* SECTION 7: Notes Area */}
         <EosCard variant="glass" className="p-6 flex flex-col gap-4">
           <div className="flex items-center gap-2 border-b border-[#B0BEC5]/20 dark:border-slate-800 pb-3">
             <FileText size={18} className="text-[#2E7D32]" />

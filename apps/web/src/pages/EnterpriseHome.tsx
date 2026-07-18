@@ -8,11 +8,24 @@ export const EnterpriseHome: React.FC = () => {
         <Typography variant="h3">Enterprise Dashboard</Typography>
         <Typography variant="small" className="text-[#B0BEC5]">Scope 3 emissions accounting and industrial byproduct matching console.</Typography>
       </div>
-      <EosCard variant="glass" className="h-60 flex items-center justify-center border border-dashed border-[#B0BEC5]/30">
-        <Typography variant="small" className="text-[#B0BEC5]">
-          No active material streams connected. Integrate your ERP via settings to begin auditing.
-        </Typography>
-      </EosCard>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <EosCard variant="glass" className="p-6 border-blue-500/20">
+          <Typography variant="small" className="text-[#B0BEC5]">Scope 3 Emissions</Typography>
+          <Typography variant="h4" className="text-blue-500 font-bold mt-2">1,240 tCO2e</Typography>
+        </EosCard>
+        <EosCard variant="glass" className="p-6 border-blue-500/20">
+          <Typography variant="small" className="text-[#B0BEC5]">Active Material Streams</Typography>
+          <Typography variant="h4" className="text-blue-500 font-bold mt-2">18</Typography>
+        </EosCard>
+        <EosCard variant="glass" className="p-6 border-blue-500/20">
+          <Typography variant="small" className="text-[#B0BEC5]">ERP Sync Status</Typography>
+          <Typography variant="h4" className="text-blue-500 font-bold mt-2">Healthy</Typography>
+        </EosCard>
+        <EosCard variant="glass" className="p-6 border-blue-500/20">
+          <Typography variant="small" className="text-[#B0BEC5]">Compliance Score</Typography>
+          <Typography variant="h4" className="text-blue-500 font-bold mt-2">94%</Typography>
+        </EosCard>
+      </div>
     </div>
   );
 };

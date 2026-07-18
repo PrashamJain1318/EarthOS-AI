@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import {
-  OBJECT_CATEGORIES,
   OBJECT_CONDITIONS,
   LIFECYCLE_STAGES,
   DONATION_STATUSES,
@@ -17,12 +16,34 @@ const locationSchema = z.object({
   coordinates: z.array(z.number()).length(2).optional()
 }).optional();
 
+// ─── Warranty Sub-Schema ─────────────────────────────────
+
+const warrantySchema = z.object({
+  provider: z.string().max(100).trim().optional().nullable(),
+  contact: z.string().max(200).trim().optional().nullable(),
+  documents: z.array(z.string().url()).max(5).default([]),
+  reminders: z.array(z.number()).default([])
+}).optional().nullable();
+
+// ─── Maintenance Sub-Schema ──────────────────────────────
+
+const maintenanceRecordSchema = z.object({
+  recordId: z.string().min(1),
+  title: z.string().max(150).trim(),
+  type: z.enum(['REPAIR', 'PREVENTATIVE', 'UPGRADE', 'INSPECTION']),
+  date: z.string().datetime().or(z.date()),
+  cost: z.number().min(0).optional().nullable(),
+  technicianNotes: z.string().max(2000).trim().optional().nullable(),
+  receipts: z.array(z.string().url()).max(10).default([]),
+  status: z.enum(['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).default('COMPLETED')
+});
+
 // ─── Create Object Validation ────────────────────────────
 
 export const createObjectSchema = z.object({
   objectName:       z.string().min(1, 'Object name is required.').max(200).trim(),
   description:      z.string().max(2000).trim().optional(),
-  category:         z.enum(OBJECT_CATEGORIES, { errorMap: () => ({ message: 'Invalid category.' }) }),
+  category:         z.string().min(1, 'Category is required.').trim(),
   subCategory:      z.string().max(100).trim().optional(),
   brand:            z.string().max(100).trim().optional(),
   model:            z.string().max(100).trim().optional(),
@@ -33,12 +54,14 @@ export const createObjectSchema = z.object({
   currentValue:     z.number().min(0, 'Current value cannot be negative.').optional(),
   condition:        z.enum(OBJECT_CONDITIONS).default('GOOD'),
   quantity:         z.number().int().min(1, 'Quantity must be at least 1.').default(1),
-  warrantyExpiry:   z.string().datetime().optional().or(z.string().optional()),
-  maintenanceDate:  z.string().datetime().optional().or(z.string().optional()),
+  warrantyExpiry:   z.string().datetime().optional().or(z.string().optional()).nullable(),
+  warranty:         warrantySchema,
+  maintenanceRecords: z.array(maintenanceRecordSchema).optional(),
+  maintenanceDate:  z.string().datetime().optional().or(z.string().optional()).nullable(),
   location:         locationSchema,
   tags:             z.array(z.string().max(50).trim()).max(20).default([]),
   notes:            z.string().max(5000).trim().optional(),
-  images:           z.array(z.string().url()).max(10).default([]),
+  images:           z.array(z.string()).max(10).default([]),
   qrCode:           z.string().trim().optional(),
   aiScore:          z.number().min(0).max(100).default(0),
   carbonScore:      z.number().min(0).max(100).default(0),
@@ -79,11 +102,20 @@ export type SearchInput = z.infer<typeof searchSchema>;
 // ─── Filter Validation ──────────────────────────────────
 
 export const filterSchema = z.object({
-  category:          z.enum(OBJECT_CATEGORIES).optional(),
+  q:                 z.string().trim().optional(),
+  name:              z.string().trim().optional(),
+  brand:             z.string().trim().optional(),
+  model:             z.string().trim().optional(),
+  serialNumber:      z.string().trim().optional(),
+  location:          z.string().trim().optional(),
+  category:          z.string().trim().optional(),
   condition:         z.enum(OBJECT_CONDITIONS).optional(),
   lifecycleStage:    z.enum(LIFECYCLE_STAGES).optional(),
   donationStatus:    z.enum(DONATION_STATUSES).optional(),
   marketplaceStatus: z.enum(MARKETPLACE_STATUSES).optional(),
+  hasWarranty:       z.string().transform((v) => v === 'true').optional(),
+  minPurchaseDate:   z.string().datetime().optional().or(z.string().optional()),
+  maxPurchaseDate:   z.string().datetime().optional().or(z.string().optional()),
   archived:          z.string().transform((v) => v === 'true').optional(),
   minPrice:          z.string().transform((v) => parseFloat(v)).optional(),
   maxPrice:          z.string().transform((v) => parseFloat(v)).optional(),
