@@ -8,6 +8,7 @@ import { Typography, EosInput, EosButton, EosBadge } from '@earthos/ui';
 import { KeyRound, Mail, AlertCircle, ArrowRight } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { UserRole } from '@earthos/types';
+import { roleRoutes } from '../components/RouteProtection';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -41,32 +42,33 @@ export const Login: React.FC = () => {
         setErrorMsg('Invalid credentials. Please try again.');
       } else {
         let role: UserRole = 'USER';
-        if (data.email.includes('enterprise')) {
-          role = 'ENTERPRISE';
-        } else if (data.email.includes('government')) {
-          role = 'GOVERNMENT';
-        } else if (data.email.includes('admin')) {
-          role = 'ADMIN';
-        }
+        const email = data.email.toLowerCase();
+        
+        if (email.includes('enterprise')) role = 'ENTERPRISE';
+        else if (email.includes('government')) role = 'GOVERNMENT';
+        else if (email.includes('superadmin') || email.includes('root')) role = 'SUPER_ADMIN';
+        else if (email.includes('admin')) role = 'ADMIN';
+        else if (email.includes('ngo')) role = 'NGO';
+        else if (email.includes('repair')) role = 'REPAIR_PARTNER';
+        else if (email.includes('recycler')) role = 'RECYCLER';
+        else if (email.includes('seller')) role = 'SELLER';
+        else if (email.includes('invalid')) role = 'UNKNOWN_ROLE' as any;
 
         login(
           {
-            id: 'mock_user_123',
-            name: 'Arthur Dent',
+            id: `mock_${role.toLowerCase()}_123`,
+            name: role.replace('_', ' '),
             email: data.email,
             role: role
           },
           'mock_jwt_access_token'
         );
 
-        if (role === 'ENTERPRISE') {
-          navigate('/dashboard/enterprise');
-        } else if (role === 'GOVERNMENT') {
-          navigate('/dashboard/government');
-        } else if (role === 'ADMIN') {
-          navigate('/dashboard/admin');
+        const destination = roleRoutes[role];
+        if (destination) {
+          navigate(destination);
         } else {
-          navigate('/dashboard/user');
+          navigate('/invalid-role');
         }
       }
     }, 1500);
