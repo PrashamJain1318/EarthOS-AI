@@ -15,6 +15,10 @@ import {
   Gift, 
   ShoppingBag, 
   Recycle,
+  User,
+  History,
+  TrendingDown,
+  ArrowRight,
   FileText
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
@@ -91,6 +95,13 @@ export const DigitalPassport: React.FC = () => {
   };
 
   const warrantyStatus = getWarrantyStatus(object.warrantyExpiry);
+
+  // Carbon Ledger Benefit calculations
+  const carbonFootprint = object.scanMetadata?.carbonEstimate?.footprint || 120;
+  const repairBenefit = object.scanMetadata?.carbonEstimate?.repairBenefit || Math.round(carbonFootprint * 0.75);
+  const reuseBenefit = object.scanMetadata?.carbonEstimate?.reuseBenefit || Math.round(carbonFootprint * 0.90);
+  const carbonSaved = repairBenefit + reuseBenefit;
+  const netBalance = carbonFootprint - carbonSaved;
 
   // Timeline events mapping
   const timelineEvents = [
@@ -173,7 +184,7 @@ export const DigitalPassport: React.FC = () => {
       {/* Printable Passport Card */}
       <div 
         ref={passportRef}
-        className="bg-white dark:bg-[#0B1220] border-2 border-[#00BCD4]/30 rounded-[2rem] p-8 md:p-12 shadow-2xl relative overflow-hidden print:shadow-none print:border-4 print:border-gray-800 print:rounded-3xl"
+        className="bg-white dark:bg-[#0B1220] border-2 border-[#00BCD4]/30 rounded-[2rem] p-6 md:p-12 shadow-2xl relative overflow-hidden print:shadow-none print:border-4 print:border-gray-800 print:rounded-3xl"
       >
         {/* Decorative Background for screen only */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[#00BCD4]/10 to-transparent rounded-bl-full pointer-events-none print:hidden" />
@@ -305,6 +316,139 @@ export const DigitalPassport: React.FC = () => {
           </div>
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+          {/* LEFT: Ownership Custody Chain (Sprint 12.8) */}
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
+              <History size={16} className="text-blue-400" />
+              <Typography variant="h6" className="font-bold uppercase tracking-widest text-blue-400 text-xs text-left">Ownership Custody Chain</Typography>
+            </div>
+            
+            <div className="flex flex-col gap-4 bg-gray-50 dark:bg-white/5 p-6 rounded-2xl border border-gray-100 dark:border-white/10 print:bg-transparent print:border print:border-gray-300">
+              {/* Current Owner */}
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-400 print:border-gray-300 print:text-black">
+                  <User size={14} />
+                </div>
+                <div className="text-left">
+                  <Typography variant="body" className="font-semibold text-[#1F2937] dark:text-white print:text-black text-sm">
+                    {object.currentOwner || 'Current Owner'}
+                  </Typography>
+                  <Typography variant="small" className="text-[10px] text-green-400 print:text-black font-bold uppercase tracking-wider">
+                    Current Custodian
+                  </Typography>
+                </div>
+              </div>
+
+              {/* Connector */}
+              <div className="pl-4 py-1 text-slate-500">
+                <ArrowRight size={14} className="rotate-90" />
+              </div>
+
+              {/* Previous Owners */}
+              {object.previousOwners && object.previousOwners.map((prev: string, index: number) => (
+                <React.Fragment key={index}>
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-slate-500/10 border border-gray-100 dark:border-white/5 flex items-center justify-center text-slate-400 print:border-gray-300 print:text-black">
+                      <User size={14} />
+                    </div>
+                    <div className="text-left">
+                      <Typography variant="body" className="font-medium text-slate-500 dark:text-slate-300 print:text-black text-sm">
+                        {prev}
+                      </Typography>
+                      <Typography variant="small" className="text-[10px] text-slate-400 dark:text-slate-500 print:text-gray-500 font-bold uppercase tracking-wider">
+                        Previous Transactor #{index + 1}
+                      </Typography>
+                    </div>
+                  </div>
+                  {index < object.previousOwners.length - 1 && (
+                    <div className="pl-4 py-1 text-slate-500">
+                      <ArrowRight size={14} className="rotate-90" />
+                    </div>
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+
+          {/* RIGHT: Carbon Ledger Balance (Sprint 12.9) */}
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
+              <TrendingDown size={16} className="text-emerald-400" />
+              <Typography variant="h6" className="font-bold uppercase tracking-widest text-emerald-400 text-xs text-left">Carbon Balance Ledger</Typography>
+            </div>
+            
+            <div className="bg-gray-50 dark:bg-white/5 p-6 rounded-2xl border border-gray-100 dark:border-white/10 flex flex-col gap-4 print:bg-transparent print:border print:border-gray-300">
+              <div className="flex justify-between items-center text-sm border-b border-gray-100 dark:border-white/5 pb-2 print:border-gray-300">
+                <span className="text-gray-500 dark:text-slate-400 print:text-gray-700">Carbon Generated (Manufacturing)</span>
+                <span className="font-mono font-semibold text-red-400 print:text-black">+{carbonFootprint} kg CO2e</span>
+              </div>
+              <div className="flex justify-between items-center text-sm border-b border-gray-100 dark:border-white/5 pb-2 print:border-gray-300">
+                <span className="text-gray-500 dark:text-slate-400 print:text-gray-700">Repair Benefit (Circular offset)</span>
+                <span className="font-mono font-semibold text-green-400 print:text-black">-{repairBenefit} kg CO2e</span>
+              </div>
+              <div className="flex justify-between items-center text-sm border-b border-gray-100 dark:border-white/5 pb-2 print:border-gray-300">
+                <span className="text-gray-500 dark:text-slate-400 print:text-gray-700">Reuse Benefit (Lifespan offset)</span>
+                <span className="font-mono font-semibold text-green-400 print:text-black">-{reuseBenefit} kg CO2e</span>
+              </div>
+              <div className="flex justify-between items-center text-sm border-b border-gray-100 dark:border-white/5 pb-2 print:border-gray-300">
+                <span className="text-gray-500 dark:text-slate-400 font-bold print:text-gray-800">Total Environmental Offsets</span>
+                <span className="font-mono font-bold text-green-400 print:text-black">-{carbonSaved} kg CO2e</span>
+              </div>
+              <div className="flex justify-between items-center pt-2">
+                <span className="text-[#1F2937] dark:text-white font-bold text-sm print:text-black">Net Carbon Signature</span>
+                <span className={`font-mono font-bold text-base px-2.5 py-0.5 rounded print:text-black ${netBalance <= 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                  {netBalance <= 0 ? `${netBalance} kg CO2e` : `+${netBalance} kg CO2e`}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Repair Cards list (Sprint 12.7) */}
+        <div className="flex flex-col gap-6 mb-12">
+          <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
+            <Hammer size={16} className="text-orange-400" />
+            <Typography variant="h6" className="font-bold uppercase tracking-widest text-orange-400 text-xs text-left">Repair & Maintenance History</Typography>
+          </div>
+          
+          {object.maintenanceRecords && object.maintenanceRecords.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {object.maintenanceRecords.map((rec: any) => (
+                <div key={rec.recordId || rec._id} className="bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-2xl p-6 flex flex-col gap-3 relative overflow-hidden text-left print:bg-transparent print:border print:border-gray-300">
+                  <div className="absolute top-0 right-0 h-1.5 w-full bg-orange-500" />
+                  <div className="flex justify-between items-start gap-4">
+                    <div>
+                      <Typography variant="body" className="font-semibold text-[#1F2937] dark:text-white print:text-black text-sm">
+                        {rec.title}
+                      </Typography>
+                      <span className="text-[10px] text-gray-500 dark:text-slate-400 font-mono">
+                        {new Date(rec.date).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-orange-500/10 text-orange-400 print:text-black uppercase">
+                      {rec.status}
+                    </span>
+                  </div>
+                  {rec.technicianNotes && (
+                    <p className="text-xs text-gray-500 dark:text-slate-400 italic bg-white/5 dark:bg-black/25 p-3 rounded-lg border border-gray-100 dark:border-white/5 print:border-gray-300">
+                      "{rec.technicianNotes}"
+                    </p>
+                  )}
+                  <div className="flex justify-between items-center text-xs text-gray-500 dark:text-slate-400 pt-2 border-t border-gray-100 dark:border-white/5 print:border-gray-300">
+                    <span>Service Cost</span>
+                    <span className="font-mono font-semibold text-[#1F2937] dark:text-white print:text-black">${rec.cost || 0}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 p-8 rounded-2xl text-gray-400 dark:text-slate-500 text-sm print:border-gray-300">
+              No circular repairs have been registered under this asset passport yet.
+            </div>
+          )}
+        </div>
+
         {/* Beautiful Lifecycle Timeline UI */}
         <div className="flex flex-col gap-6 mb-12">
           <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
@@ -315,7 +459,7 @@ export const DigitalPassport: React.FC = () => {
             {timelineEvents.map((evt) => {
               const Icon = evt.icon;
               return (
-                <div key={evt.id} className="relative flex flex-col gap-1 select-none">
+                <div key={evt.id} className="relative flex flex-col gap-1 select-none text-left">
                   {/* Timeline Dot Node */}
                   <span className={`absolute -left-[45px] top-0.5 h-8 w-8 rounded-full border-2 bg-white dark:bg-[#0B1220] flex items-center justify-center print:bg-white print:border-gray-400 ${evt.active ? evt.color : 'border-gray-100 dark:border-white/10 text-gray-300 dark:text-white/20 print:text-gray-400'}`}>
                     <Icon size={14} />
@@ -334,7 +478,7 @@ export const DigitalPassport: React.FC = () => {
         </div>
 
         {/* Registration Block */}
-        <div className="flex flex-col gap-6 md:col-span-2 mt-4">
+        <div className="flex flex-col gap-6 md:col-span-2 mt-4 text-left">
           <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
             <Typography variant="h6" className="font-bold uppercase tracking-widest text-gray-400 print:text-black text-xs">Genesis Record</Typography>
           </div>

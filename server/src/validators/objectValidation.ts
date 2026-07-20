@@ -71,6 +71,8 @@ export const createObjectSchema = z.object({
   marketplaceStatus: z.enum(MARKETPLACE_STATUSES).default('NONE'),
   archived:         z.boolean().default(false),
   barcode:          z.string().trim().optional(),
+  currentOwner:     z.string().trim().optional(),
+  previousOwners:    z.array(z.string().trim()).optional(),
   scanMetadata:     z.object({
     ocrResults:     z.any().optional(),
     aiSuggestions:  z.any().optional(),

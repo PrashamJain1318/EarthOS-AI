@@ -75,6 +75,8 @@ export interface IObject extends Omit<Document, 'model'> {
   archived: boolean;
   barcode?: string;
   passportId?: string;
+  currentOwner?: string;
+  previousOwners?: string[];
   scanMetadata?: {
     ocrResults?: any;
     aiSuggestions?: any;
@@ -279,6 +281,14 @@ const ObjectSchema = new Schema<IObject>({
     unique: true,
     sparse: true,
     index: true
+  },
+  currentOwner: {
+    type: String,
+    default: 'EarthOS Registered User'
+  },
+  previousOwners: {
+    type: [String],
+    default: ['Primary Retailer Store', 'Genesis Production Facility']
   }
 }, {
   timestamps: true
@@ -318,6 +328,10 @@ ObjectSchema.pre<IObject>('save', async function (next) {
     if (!isUnique) {
       this.passportId = `EARTH-2026-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
     }
+  }
+  this.currentOwner = this.currentOwner || 'EarthOS Registered User';
+  if (!this.previousOwners || this.previousOwners.length === 0) {
+    this.previousOwners = ['Primary Retailer Store', 'Genesis Production Facility'];
   }
   next();
 });

@@ -14,7 +14,11 @@ import {
   Hammer, 
   Gift, 
   ShoppingBag, 
-  Recycle 
+  Recycle,
+  User,
+  History,
+  TrendingDown,
+  ArrowRight
 } from 'lucide-react';
 
 export const PublicPassport: React.FC = () => {
@@ -103,6 +107,14 @@ export const PublicPassport: React.FC = () => {
 
   const warrantyStatus = getWarrantyStatus(object.warrantyExpiry);
 
+  // Carbon Timeline Benefit calculations
+  // Fallback calculations if scanMetadata carbonEstimate is missing
+  const carbonFootprint = object.scanMetadata?.carbonEstimate?.footprint || 120; // in kg CO2e
+  const repairBenefit = object.scanMetadata?.carbonEstimate?.repairBenefit || Math.round(carbonFootprint * 0.75);
+  const reuseBenefit = object.scanMetadata?.carbonEstimate?.reuseBenefit || Math.round(carbonFootprint * 0.90);
+  const carbonSaved = repairBenefit + reuseBenefit;
+  const netBalance = carbonFootprint - carbonSaved;
+
   // Timeline events mapping
   const timelineEvents = [
     {
@@ -164,7 +176,7 @@ export const PublicPassport: React.FC = () => {
   ];
 
   return (
-    <div className="w-full max-w-4xl mx-auto py-12 px-4 flex flex-col gap-8">
+    <div className="w-full max-w-5xl mx-auto py-12 px-4 flex flex-col gap-8">
       
       {/* Public Header */}
       <div className="flex justify-between items-center pb-4 border-b border-slate-200 dark:border-slate-800">
@@ -183,7 +195,7 @@ export const PublicPassport: React.FC = () => {
       </div>
 
       {/* Main Certificate Card */}
-      <div className="bg-[#0B1220] border-2 border-[#00BCD4]/30 rounded-[2rem] p-8 md:p-12 shadow-2xl relative overflow-hidden">
+      <div className="bg-[#0B1220] border-2 border-[#00BCD4]/30 rounded-[2rem] p-6 md:p-12 shadow-2xl relative overflow-hidden">
         {/* Glowing decor */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[#00BCD4]/10 to-transparent rounded-bl-full pointer-events-none" />
 
@@ -206,7 +218,7 @@ export const PublicPassport: React.FC = () => {
           </EosBadge>
         </div>
 
-        {/* Certificate Specs & Image */}
+        {/* Specs & Image */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           {/* Image Box */}
           <div className="md:col-span-1 border border-white/10 rounded-2xl overflow-hidden aspect-square flex items-center justify-center bg-black/35">
@@ -297,6 +309,139 @@ export const PublicPassport: React.FC = () => {
               </span>
             </div>
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+          {/* LEFT: Ownership Custody Chain (Sprint 12.8) */}
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center gap-2 pb-2 border-b border-white/5">
+              <History size={16} className="text-blue-400" />
+              <Typography variant="h6" className="font-bold uppercase tracking-widest text-blue-400 text-xs">Ownership Custody Chain</Typography>
+            </div>
+            
+            <div className="flex flex-col gap-4 bg-white/5 p-6 rounded-2xl border border-white/5">
+              {/* Current Owner */}
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-400">
+                  <User size={14} />
+                </div>
+                <div>
+                  <Typography variant="body" className="font-semibold text-white text-sm">
+                    {object.currentOwner || 'Current Owner'}
+                  </Typography>
+                  <Typography variant="small" className="text-[10px] text-green-400 font-bold uppercase tracking-wider">
+                    Current Custodian
+                  </Typography>
+                </div>
+              </div>
+
+              {/* Connector */}
+              <div className="pl-4 py-1 text-slate-500">
+                <ArrowRight size={14} className="rotate-90" />
+              </div>
+
+              {/* Previous Owners */}
+              {object.previousOwners && object.previousOwners.map((prev: string, index: number) => (
+                <React.Fragment key={index}>
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-slate-500/10 border border-white/5 flex items-center justify-center text-slate-400">
+                      <User size={14} />
+                    </div>
+                    <div>
+                      <Typography variant="body" className="font-medium text-slate-300 text-sm">
+                        {prev}
+                      </Typography>
+                      <Typography variant="small" className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                        Previous Transactor #{index + 1}
+                      </Typography>
+                    </div>
+                  </div>
+                  {index < object.previousOwners.length - 1 && (
+                    <div className="pl-4 py-1 text-slate-500">
+                      <ArrowRight size={14} className="rotate-90" />
+                    </div>
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+
+          {/* RIGHT: Carbon Ledger Balance (Sprint 12.9) */}
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center gap-2 pb-2 border-b border-white/5">
+              <TrendingDown size={16} className="text-emerald-400" />
+              <Typography variant="h6" className="font-bold uppercase tracking-widest text-emerald-400 text-xs">Carbon Balance Ledger</Typography>
+            </div>
+            
+            <div className="bg-white/5 p-6 rounded-2xl border border-white/5 flex flex-col gap-4">
+              <div className="flex justify-between items-center text-sm border-b border-white/5 pb-2">
+                <span className="text-slate-400">Carbon Generated (Manufacturing)</span>
+                <span className="font-mono font-semibold text-red-400">+{carbonFootprint} kg CO2e</span>
+              </div>
+              <div className="flex justify-between items-center text-sm border-b border-white/5 pb-2">
+                <span className="text-slate-400">Repair Benefit (Circular offset)</span>
+                <span className="font-mono font-semibold text-green-400">-{repairBenefit} kg CO2e</span>
+              </div>
+              <div className="flex justify-between items-center text-sm border-b border-white/5 pb-2">
+                <span className="text-slate-400">Reuse Benefit (Lifespan offset)</span>
+                <span className="font-mono font-semibold text-green-400">-{reuseBenefit} kg CO2e</span>
+              </div>
+              <div className="flex justify-between items-center text-sm border-b border-white/5 pb-2">
+                <span className="text-slate-400 font-bold">Total Environmental Offsets</span>
+                <span className="font-mono font-bold text-green-400">-{carbonSaved} kg CO2e</span>
+              </div>
+              <div className="flex justify-between items-center pt-2">
+                <span className="text-white font-bold text-sm">Net Carbon Signature</span>
+                <span className={`font-mono font-bold text-base px-2.5 py-0.5 rounded ${netBalance <= 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                  {netBalance <= 0 ? `${netBalance} kg CO2e` : `+${netBalance} kg CO2e`}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Repair Cards list (Sprint 12.7) */}
+        <div className="flex flex-col gap-6 mb-12">
+          <div className="flex items-center gap-2 pb-2 border-b border-white/5">
+            <Hammer size={16} className="text-orange-400" />
+            <Typography variant="h6" className="font-bold uppercase tracking-widest text-orange-400 text-xs">Repair & Maintenance History</Typography>
+          </div>
+          
+          {object.maintenanceRecords && object.maintenanceRecords.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {object.maintenanceRecords.map((rec: any) => (
+                <div key={rec.recordId || rec._id} className="bg-white/5 border border-white/5 rounded-2xl p-6 flex flex-col gap-3 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 h-1.5 w-full bg-orange-500" />
+                  <div className="flex justify-between items-start gap-4">
+                    <div>
+                      <Typography variant="body" className="font-semibold text-white text-sm">
+                        {rec.title}
+                      </Typography>
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        {new Date(rec.date).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-orange-500/10 text-orange-400 uppercase">
+                      {rec.status}
+                    </span>
+                  </div>
+                  {rec.technicianNotes && (
+                    <p className="text-xs text-slate-400 italic bg-black/25 p-3 rounded-lg border border-white/5">
+                      "{rec.technicianNotes}"
+                    </p>
+                  )}
+                  <div className="flex justify-between items-center text-xs text-slate-400 pt-2 border-t border-white/5">
+                    <span>Service Cost</span>
+                    <span className="font-mono font-semibold text-white">${rec.cost || 0}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center bg-white/5 border border-white/5 p-8 rounded-2xl text-slate-500 text-sm">
+              No circular repairs have been registered under this asset passport yet.
+            </div>
+          )}
         </div>
 
         {/* Beautiful Lifecycle Timeline UI */}
