@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { EosButton, Typography, EosBadge } from '@earthos/ui';
 import { 
@@ -21,7 +21,8 @@ import {
   ArrowRight,
   Brain,
   Download,
-  FileText
+  FileText,
+  Loader2
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useObject } from '../hooks/useObjects';
@@ -33,6 +34,12 @@ export const DigitalPassport: React.FC = () => {
   const navigate = useNavigate();
   const { data: object, isLoading, isError, error, refetch } = useObject(id!);
   const passportRef = useRef<HTMLDivElement>(null);
+
+  // Repair Form State (Sprint 12.14)
+  const [repairTitle, setRepairTitle] = useState('');
+  const [repairCost, setRepairCost] = useState('85');
+  const [repairNotes, setRepairNotes] = useState('Replaced battery cell with certified OEM block.');
+  const [submittingRepair, setSubmittingRepair] = useState(false);
 
   if (isLoading) {
     return (
@@ -72,6 +79,45 @@ export const DigitalPassport: React.FC = () => {
     } else {
       navigator.clipboard.writeText(url);
       alert('Public Verification Passport URL copied to clipboard!');
+    }
+  };
+
+  // Submit Partner Repair update (Sprint 12.14)
+  const handleRepairSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!repairTitle) return;
+
+    try {
+      setSubmittingRepair(true);
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`http://localhost:8000/api/v1/passports/${object.passportId}/repairs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: repairTitle,
+          cost: Number(repairCost),
+          technicianNotes: repairNotes,
+          status: 'COMPLETED'
+        })
+      });
+
+      const resData = await response.json();
+      if (!response.ok) {
+        throw new Error(resData.error?.message || 'Failed to update repair record.');
+      }
+
+      alert('🛠️ Passport updated successfully by Repair Partner!');
+      setRepairTitle('');
+      refetch(); // Reload Mongoose record
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : 'Error updating repair record.');
+    } finally {
+      setSubmittingRepair(false);
     }
   };
 
@@ -318,7 +364,7 @@ export const DigitalPassport: React.FC = () => {
           </div>
         </div>
 
-        {/* AI INSIGHTS PANEL (Sprint 12.11) */}
+        {/* AI INSIGHTS PANEL */}
         {object.passportInsights && object.passportInsights.length > 0 && (
           <div className="flex flex-col gap-6 mb-12">
             <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
@@ -326,12 +372,12 @@ export const DigitalPassport: React.FC = () => {
               <Typography variant="h6" className="font-bold uppercase tracking-widest text-green-500 print:text-black text-xs text-left">AI Circular Insights</Typography>
             </div>
             
-            <div className="bg-green-500/5 dark:bg-green-500/5 border-2 border-green-500/20 dark:border-green-500/20 rounded-2xl p-6 relative overflow-hidden flex flex-col gap-4 print:bg-transparent print:border print:border-gray-300">
+            <div className="bg-green-500/5 border-2 border-green-500/20 rounded-2xl p-6 relative overflow-hidden flex flex-col gap-4 print:bg-transparent print:border print:border-gray-300">
               <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-green-500/10 to-transparent rounded-bl-full pointer-events-none print:hidden" />
               <div className="flex flex-col gap-2">
                 {object.passportInsights.map((insight: string, idx: number) => (
                   <div key={idx} className="flex gap-2.5 items-start text-sm">
-                    <span className="h-5 w-5 rounded-full bg-green-500/10 dark:bg-green-500/10 flex items-center justify-center text-green-500 dark:text-green-400 print:text-black mt-0.5 shrink-0 text-xs font-bold">
+                    <span className="h-5 w-5 rounded-full bg-green-500/10 flex items-center justify-center text-green-500 mt-0.5 shrink-0 text-xs font-bold">
                       {idx + 1}
                     </span>
                     <p className="text-[#1F2937] dark:text-slate-300 print:text-black leading-relaxed text-left">{insight}</p>
@@ -431,7 +477,7 @@ export const DigitalPassport: React.FC = () => {
           </div>
         </div>
 
-        {/* UPLOADED DOCUMENTS LIST (Sprint 12.10) */}
+        {/* UPLOADED DOCUMENTS LIST */}
         <div className="flex flex-col gap-6 mb-12">
           <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
             <FileText size={16} className="text-cyan-400" />
@@ -466,6 +512,61 @@ export const DigitalPassport: React.FC = () => {
               No circular documents have been registered under this asset passport yet.
             </div>
           )}
+        </div>
+
+        {/* Repair Partner Simulator Form (Sprint 12.14) - Hidden when printing */}
+        <div className="flex flex-col gap-6 mb-12 print:hidden border-2 border-orange-500/20 bg-orange-500/5 p-6 rounded-3xl text-left">
+          <div className="flex items-center gap-2 pb-2 border-b border-orange-500/20">
+            <Hammer size={16} className="text-orange-500" />
+            <Typography variant="h6" className="font-bold uppercase tracking-widest text-orange-500 text-xs">Simulate Repair Partner Update</Typography>
+          </div>
+          
+          <form onSubmit={handleRepairSubmit} className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Service Record Title</label>
+                <input 
+                  type="text" 
+                  value={repairTitle} 
+                  onChange={(e) => setRepairTitle(e.target.value)} 
+                  placeholder="e.g. Battery Replacement" 
+                  className="bg-black/20 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-orange-500"
+                  required
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Service Cost ($)</label>
+                <input 
+                  type="number" 
+                  value={repairCost} 
+                  onChange={(e) => setRepairCost(e.target.value)} 
+                  placeholder="e.g. 85" 
+                  className="bg-black/20 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-orange-500"
+                  required
+                />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Technician Action Notes</label>
+              <textarea 
+                value={repairNotes} 
+                onChange={(e) => setRepairNotes(e.target.value)} 
+                placeholder="Details of the circular repair work..." 
+                className="bg-black/20 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-orange-500 h-20 resize-none"
+              />
+            </div>
+            
+            <EosButton 
+              type="submit" 
+              variant="primary" 
+              className="bg-orange-500 hover:bg-orange-600 text-black font-bold self-end px-6"
+              disabled={submittingRepair}
+            >
+              {submittingRepair ? (
+                <span className="flex items-center gap-1.5"><Loader2 size={16} className="animate-spin" /> Registering Repair...</span>
+              ) : 'Submit Partner Service log'}
+            </EosButton>
+          </form>
         </div>
 
         {/* Repair Cards list */}
