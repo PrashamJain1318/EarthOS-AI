@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Typography, EosBadge, EosButton, EosCard } from '@earthos/ui';
+import { Typography, EosBadge, EosButton } from '@earthos/ui';
 import { 
   User as UserIcon, 
   Heart, 
@@ -11,12 +11,10 @@ import {
   Building2, 
   Globe, 
   ArrowRight,
-  ShieldAlert,
-  Coins,
-  Activity,
-  Award,
-  BookOpen,
-  Leaf
+  Mail,
+  KeyRound,
+  Chrome,
+  AlertCircle
 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { UserRole } from '@earthos/types';
@@ -28,9 +26,11 @@ interface PortalSpec {
   subtitle: string;
   icon: React.ComponentType<any>;
   desc: string;
-  color: string;
-  glow: string;
-  badge: string;
+  colorClass: string;     // Active card text/border
+  activeBg: string;       // Active card background
+  btnClass: string;       // Dynamic primary login button color
+  focusRing: string;      // Input focus borders
+  accentText: string;     // Custom text highlights
 }
 
 const PORTALS: PortalSpec[] = [
@@ -40,9 +40,11 @@ const PORTALS: PortalSpec[] = [
     subtitle: '👤 Personal circular ledger & eco passport',
     icon: UserIcon,
     desc: 'Register assets, scan product labels, calculate manufacturing carbon offsets, and track lifecycle histories.',
-    color: 'text-cyan-400 border-cyan-500/20 bg-cyan-500/5',
-    glow: 'from-cyan-500/10 to-transparent',
-    badge: 'bg-cyan-500/10 text-cyan-400'
+    colorClass: 'text-green-400 border-green-500/30',
+    activeBg: 'bg-green-500/5',
+    btnClass: 'bg-green-500 hover:bg-green-600 text-[#0B1220] focus:ring-green-400',
+    focusRing: 'focus:border-green-500 focus:ring-green-500/20',
+    accentText: 'text-green-400'
   },
   {
     role: 'NGO',
@@ -50,9 +52,11 @@ const PORTALS: PortalSpec[] = [
     subtitle: '❤️ Donation redistribution & charity hubs',
     icon: Heart,
     desc: 'Coordinate donation drives, monitor sorting logistics, manage municipal collection sites, and allocate circular resources.',
-    color: 'text-red-400 border-red-500/20 bg-red-500/5',
-    glow: 'from-red-500/10 to-transparent',
-    badge: 'bg-red-500/10 text-red-400'
+    colorClass: 'text-pink-400 border-pink-500/30',
+    activeBg: 'bg-pink-500/5',
+    btnClass: 'bg-pink-500 hover:bg-pink-600 text-white focus:ring-pink-400',
+    focusRing: 'focus:border-pink-500 focus:ring-pink-500/20',
+    accentText: 'text-pink-400'
   },
   {
     role: 'REPAIR_PARTNER',
@@ -60,9 +64,11 @@ const PORTALS: PortalSpec[] = [
     subtitle: '🔧 Circular diagnostics & parts reclamation',
     icon: Hammer,
     desc: 'Verify product warranties, register technician service logs, calculate offsets, and reclaim spare parts.',
-    color: 'text-orange-400 border-orange-500/20 bg-orange-500/5',
-    glow: 'from-orange-500/10 to-transparent',
-    badge: 'bg-orange-500/10 text-orange-400'
+    colorClass: 'text-orange-400 border-orange-500/30',
+    activeBg: 'bg-orange-500/5',
+    btnClass: 'bg-orange-500 hover:bg-orange-600 text-[#0B1220] focus:ring-orange-400',
+    focusRing: 'focus:border-orange-500 focus:ring-orange-500/20',
+    accentText: 'text-orange-400'
   },
   {
     role: 'RECYCLER',
@@ -70,9 +76,11 @@ const PORTALS: PortalSpec[] = [
     subtitle: '♻️ Material recovery & sorting nodes',
     icon: Recycle,
     desc: 'Log recovered batch yields, track purity vectors via Gemini Vision, and trace secondary raw material inputs.',
-    color: 'text-teal-400 border-teal-500/20 bg-teal-500/5',
-    glow: 'from-teal-500/10 to-transparent',
-    badge: 'bg-teal-500/10 text-teal-400'
+    colorClass: 'text-emerald-400 border-emerald-500/30',
+    activeBg: 'bg-emerald-500/5',
+    btnClass: 'bg-emerald-500 hover:bg-emerald-600 text-[#0B1220] focus:ring-emerald-400',
+    focusRing: 'focus:border-emerald-500 focus:ring-emerald-500/20',
+    accentText: 'text-emerald-400'
   },
   {
     role: 'SELLER',
@@ -80,9 +88,11 @@ const PORTALS: PortalSpec[] = [
     subtitle: '🛒 Reclaimed material circular exchange',
     icon: ShoppingBag,
     desc: 'List batch material contracts, verify escrow transaction records, and coordinate secondary sales.',
-    color: 'text-pink-400 border-pink-500/20 bg-pink-500/5',
-    glow: 'from-pink-500/10 to-transparent',
-    badge: 'bg-pink-500/10 text-pink-400'
+    colorClass: 'text-purple-400 border-purple-500/30',
+    activeBg: 'bg-purple-500/5',
+    btnClass: 'bg-purple-500 hover:bg-purple-600 text-white focus:ring-purple-400',
+    focusRing: 'focus:border-purple-500 focus:ring-purple-500/20',
+    accentText: 'text-purple-400'
   },
   {
     role: 'ENTERPRISE',
@@ -90,9 +100,11 @@ const PORTALS: PortalSpec[] = [
     subtitle: '🏢 Scope 3 ESG supply chain audit',
     icon: Building2,
     desc: 'Generate circular product passports at scale, monitor Scope 3 carbon compliance, and evaluate circular tax benefits.',
-    color: 'text-blue-400 border-blue-500/20 bg-blue-500/5',
-    glow: 'from-blue-500/10 to-transparent',
-    badge: 'bg-blue-500/10 text-blue-400'
+    colorClass: 'text-blue-400 border-blue-500/30',
+    activeBg: 'bg-blue-500/5',
+    btnClass: 'bg-blue-500 hover:bg-blue-600 text-white focus:ring-blue-400',
+    focusRing: 'focus:border-blue-500 focus:ring-blue-500/20',
+    accentText: 'text-blue-400'
   },
   {
     role: 'GOVERNMENT',
@@ -100,29 +112,49 @@ const PORTALS: PortalSpec[] = [
     subtitle: '🏛️ Regional circular economy registry',
     icon: Globe,
     desc: 'Audit municipal recycling indexes, manage circular grant allocation programs, and enforce material regulatory compliance.',
-    color: 'text-purple-400 border-purple-500/20 bg-purple-500/5',
-    glow: 'from-purple-500/10 to-transparent',
-    badge: 'bg-purple-500/10 text-purple-400'
+    colorClass: 'text-amber-400 border-amber-500/30', // Gold/Amber accent
+    activeBg: 'bg-amber-500/5',
+    btnClass: 'bg-[#D4AF37] hover:bg-[#C59B27] text-[#0B1220] focus:ring-amber-400', // Gold button styling
+    focusRing: 'focus:border-amber-500 focus:ring-amber-500/20',
+    accentText: 'text-amber-400'
   }
 ];
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
-  const [selectedIdx, setSelectedIdx] = useState<number>(0);
-  const [loading, setLoading] = useState(false);
+
+  // Persistence: Retrieve the selected portal during the session (Sprint 10.8.2)
+  const initialRole = (sessionStorage.getItem('earthos_selected_portal') as UserRole) || 'USER';
+  const initialIdx = PORTALS.findIndex((p) => p.role === initialRole);
+  
+  const [selectedIdx, setSelectedIdx] = useState<number>(initialIdx !== -1 ? initialIdx : 0);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const selectedPortal = PORTALS[selectedIdx];
 
-  const handleEnterWorkspace = () => {
-    setLoading(true);
+  // Save selected portal to session storage on change
+  useEffect(() => {
+    sessionStorage.setItem('earthos_selected_portal', selectedPortal.role);
+  }, [selectedPortal]);
+
+  const handleLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setErrorMsg(null);
+
+    // Simulate mock authentication verification
     setTimeout(() => {
       const role = selectedPortal.role;
       login(
         {
           id: `mock_${role.toLowerCase()}_123`,
           name: `${selectedPortal.title} Agent`,
-          email: `${role.toLowerCase()}@earthos.ai`,
+          email: email || `${role.toLowerCase()}@earthos.ai`,
           role: role
         },
         'mock_jwt_access_token'
@@ -134,8 +166,8 @@ export const Login: React.FC = () => {
       } else {
         navigate('/invalid-role');
       }
-      setLoading(false);
-    }, 800);
+      setIsLoading(false);
+    }, 1000);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
@@ -145,201 +177,13 @@ export const Login: React.FC = () => {
     }
   };
 
-  // Render Right Side Portal Specific Previews
-  const renderRightPanelContent = () => {
-    const role = selectedPortal.role;
-    
-    switch (role) {
-      case 'USER':
-        return (
-          <div className="flex flex-col gap-8 text-left">
-            <div>
-              <EosBadge variant="info" className={selectedPortal.badge}>USER DASHBOARD MOCKUP</EosBadge>
-              <Typography variant="h3" className="font-bold text-white mt-2">Personal Circular Inventory</Typography>
-              <Typography variant="small" className="text-slate-400 mt-1">Track circular custody and passport lineage for owned items.</Typography>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                <Coins className="text-cyan-400 mb-2" size={24} />
-                <Typography variant="body" className="font-bold text-white">240.50 EOS</Typography>
-                <Typography variant="small" className="text-slate-500">Circular Rewards Balance</Typography>
-              </div>
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                <Leaf className="text-green-400 mb-2" size={24} />
-                <Typography variant="body" className="font-bold text-white">412 kg CO2e</Typography>
-                <Typography variant="small" className="text-slate-500">Total Carbon Saved</Typography>
-              </div>
-            </div>
-
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col gap-3">
-              <Typography variant="body" className="font-semibold text-white">Active Object Passport Preview</Typography>
-              <div className="flex justify-between items-center bg-black/25 p-3 rounded-lg border border-white/5 text-xs">
-                <span className="font-mono text-cyan-400">EARTH-2026-X83A1B</span>
-                <span className="text-green-400 font-bold">VERIFIED</span>
-              </div>
-            </div>
-          </div>
-        );
-      case 'NGO':
-        return (
-          <div className="flex flex-col gap-8 text-left">
-            <div>
-              <EosBadge variant="info" className={selectedPortal.badge}>NGO HUD PREVIEW</EosBadge>
-              <Typography variant="h3" className="font-bold text-white mt-2">Resource Redistribution</Typography>
-              <Typography variant="small" className="text-slate-400">Coordinate regional allocation programs and donation drop-offs.</Typography>
-            </div>
-
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col gap-4">
-              <div className="flex justify-between items-center text-sm border-b border-white/5 pb-2">
-                <span className="text-slate-400">Active Drop-off Locations</span>
-                <span className="text-red-400 font-bold font-mono">8 Stations</span>
-              </div>
-              <div className="flex justify-between items-center text-sm border-b border-white/5 pb-2">
-                <span className="text-slate-400">Redistribution Velocity</span>
-                <span className="text-green-400 font-bold font-mono">84.2% Success</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-400">Monthly Reallocated Weight</span>
-                <span className="text-white font-bold font-mono">4.2 Tons</span>
-              </div>
-            </div>
-          </div>
-        );
-      case 'REPAIR_PARTNER':
-        return (
-          <div className="flex flex-col gap-8 text-left">
-            <div>
-              <EosBadge variant="info" className={selectedPortal.badge}>REPAIR CONSOLE PREVIEW</EosBadge>
-              <Typography variant="h3" className="font-bold text-white mt-2">Diagnostics & Diagnostics Queue</Typography>
-              <Typography variant="small" className="text-slate-400">Log technical maintenance records directly onto the product passport.</Typography>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                <Activity className="text-orange-400 mb-2" size={24} />
-                <Typography variant="body" className="font-bold text-white">12 Pending</Typography>
-                <Typography variant="small" className="text-slate-500">Service Queue Tickets</Typography>
-              </div>
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                <Award className="text-green-400 mb-2" size={24} />
-                <Typography variant="body" className="font-bold text-white">18.4 Hours</Typography>
-                <Typography variant="small" className="text-slate-500">Avg Turnaround Time</Typography>
-              </div>
-            </div>
-
-            <div className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-center justify-between text-xs">
-              <span className="text-slate-400">Reclaimed Spare Parts Catalog</span>
-              <span className="font-bold text-orange-400">142 In Stock</span>
-            </div>
-          </div>
-        );
-      case 'RECYCLER':
-        return (
-          <div className="flex flex-col gap-8 text-left">
-            <div>
-              <EosBadge variant="info" className={selectedPortal.badge}>RECYCLING NODE PREVIEW</EosBadge>
-              <Typography variant="h3" className="font-bold text-white mt-2">Material Recovery Processing</Typography>
-              <Typography variant="small" className="text-slate-400">Track raw post-industrial yields and sorting classification purity.</Typography>
-            </div>
-
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col gap-4">
-              <div className="flex justify-between items-center text-sm border-b border-white/5 pb-2">
-                <span className="text-slate-400">Gemini Sorting Accuracy</span>
-                <span className="text-teal-400 font-bold font-mono">99.2% Accuracy</span>
-              </div>
-              <div className="flex justify-between items-center text-sm border-b border-white/5 pb-2">
-                <span className="text-slate-400">Weekly Reclaimed Copper Yield</span>
-                <span className="text-white font-bold font-mono">5.8 Tons</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-400">Active Scrap Processing Lines</span>
-                <span className="text-teal-400 font-bold font-mono">4 Active</span>
-              </div>
-            </div>
-          </div>
-        );
-      case 'SELLER':
-        return (
-          <div className="flex flex-col gap-8 text-left">
-            <div>
-              <EosBadge variant="info" className={selectedPortal.badge}>SELLER REGISTRY PREVIEW</EosBadge>
-              <Typography variant="h3" className="font-bold text-white mt-2">Marketplace Trading Dashboard</Typography>
-              <Typography variant="small" className="text-slate-400">Review transacted batch volumes and escrow contract balances.</Typography>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                <Coins className="text-pink-400 mb-2" size={24} />
-                <Typography variant="body" className="font-bold text-white">$4,520 USD</Typography>
-                <Typography variant="small" className="text-slate-500">Escrow Security Balance</Typography>
-              </div>
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                <Activity className="text-green-400 mb-2" size={24} />
-                <Typography variant="body" className="font-bold text-white">98.6%</Typography>
-                <Typography variant="small" className="text-slate-500">Circular Custodian Score</Typography>
-              </div>
-            </div>
-          </div>
-        );
-      case 'ENTERPRISE':
-        return (
-          <div className="flex flex-col gap-8 text-left">
-            <div>
-              <EosBadge variant="info" className={selectedPortal.badge}>ENTERPRISE PORTAL PREVIEW</EosBadge>
-              <Typography variant="h3" className="font-bold text-white mt-2">Scope 3 Traceability Ledger</Typography>
-              <Typography variant="small" className="text-slate-400">Monitor carbon footprint audits and ESG conformance indicators.</Typography>
-            </div>
-
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col gap-4">
-              <div className="flex justify-between items-center text-sm border-b border-white/5 pb-2">
-                <span className="text-slate-400">Corporate circular ESG Grade</span>
-                <span className="text-blue-400 font-bold font-mono">A- (Excellent)</span>
-              </div>
-              <div className="flex justify-between items-center text-sm border-b border-white/5 pb-2">
-                <span className="text-slate-400">DPP Mint Velocity</span>
-                <span className="text-white font-bold font-mono">82,400 Passports/mo</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-400">Total Circular Tax Exemption</span>
-                <span className="text-green-400 font-bold font-mono">$18,450 Saved</span>
-              </div>
-            </div>
-          </div>
-        );
-      case 'GOVERNMENT':
-        return (
-          <div className="flex flex-col gap-8 text-left">
-            <div>
-              <EosBadge variant="info" className={selectedPortal.badge}>REGULATORY REGISTRY PREVIEW</EosBadge>
-              <Typography variant="h3" className="font-bold text-white mt-2">Regional Economy Compliance</Typography>
-              <Typography variant="small" className="text-slate-400">Audit waste diversion quotas and allocate circular grants.</Typography>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                <Activity className="text-purple-400 mb-2" size={24} />
-                <Typography variant="body" className="font-bold text-white">68.4%</Typography>
-                <Typography variant="small" className="text-slate-500">Waste Diversion Ratio</Typography>
-              </div>
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                <BookOpen className="text-green-400 mb-2" size={24} />
-                <Typography variant="body" className="font-bold text-white">$24.8M</Typography>
-                <Typography variant="small" className="text-slate-500">Circular Economy Grants</Typography>
-              </div>
-            </div>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
+  const IconComponent = selectedPortal.icon;
 
   return (
-    <div className="min-h-screen w-screen flex bg-[#0B1220] overflow-hidden text-white font-sans">
+    <div className="min-h-screen w-screen flex flex-col lg:flex-row bg-[#0B1220] text-white font-sans overflow-y-auto lg:overflow-hidden select-none">
       
-      {/* LEFT SIDE: PORTAL SELECTION CARD LIST */}
-      <div className="w-full lg:w-1/2 p-6 md:p-12 flex flex-col justify-between overflow-y-auto min-h-screen">
+      {/* LEFT SIDE: PORTAL SELECTION CARD LIST (Sprint 10.8.2) */}
+      <div className="w-full lg:w-1/2 p-6 md:p-12 flex flex-col justify-between lg:h-screen lg:overflow-y-auto border-b lg:border-b-0 lg:border-r border-white/5">
         
         {/* Brand Header */}
         <div className="flex items-center gap-2 select-none justify-start pb-4">
@@ -350,7 +194,7 @@ export const Login: React.FC = () => {
         </div>
 
         {/* Form Body */}
-        <div className="my-auto py-8 max-w-xl">
+        <div className="my-auto py-8 max-w-xl w-full mx-auto lg:mx-0">
           <div className="text-left mb-8">
             <Typography variant="h2" className="font-bold font-display tracking-tight text-white leading-tight">
               Choose Your Portal
@@ -363,7 +207,7 @@ export const Login: React.FC = () => {
           {/* Cards Grid */}
           <div className="flex flex-col gap-3.5">
             {PORTALS.map((portal, index) => {
-              const IconComponent = portal.icon;
+              const CardIcon = portal.icon;
               const isSelected = selectedIdx === index;
               return (
                 <div
@@ -372,17 +216,17 @@ export const Login: React.FC = () => {
                   role="button"
                   onClick={() => setSelectedIdx(index)}
                   onKeyDown={(e) => handleKeyDown(e, index)}
-                  className={`p-4 rounded-2xl border-2 flex items-center justify-between gap-4 cursor-pointer outline-none transition-all duration-300 select-none ${
+                  className={`p-4 rounded-2xl border-2 flex items-center justify-between gap-4 cursor-pointer outline-none transition-all duration-300 ${
                     isSelected 
-                      ? `${portal.color} shadow-lg shadow-black/35 scale-[1.01]` 
+                      ? `${portal.colorClass} ${portal.activeBg} shadow-lg shadow-black/35 scale-[1.01]` 
                       : 'border-white/5 hover:border-white/10 hover:bg-white/5 bg-[#0F172A]/40'
                   }`}
                   aria-selected={isSelected}
                   aria-label={`${portal.title}. ${portal.desc}`}
                 >
                   <div className="flex items-center gap-4 text-left">
-                    <span className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 bg-white/5 border border-white/5 ${isSelected ? portal.color : 'text-slate-400'}`}>
-                      <IconComponent size={20} />
+                    <span className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 bg-white/5 border border-white/5 ${isSelected ? portal.colorClass : 'text-slate-400'}`}>
+                      <CardIcon size={20} />
                     </span>
                     <div>
                       <Typography variant="body" className="font-semibold text-white text-sm">
@@ -403,28 +247,17 @@ export const Login: React.FC = () => {
           </div>
         </div>
 
-        {/* Enter Portal Action Button */}
-        <div className="pt-6 max-w-xl flex flex-col gap-4">
-          <EosButton
-            variant="primary"
-            className="w-full font-bold justify-between items-center py-3.5"
-            onClick={handleEnterWorkspace}
-            isLoading={loading}
-          >
-            <span>Proceed to {selectedPortal.title} Workspace</span>
-            <ArrowRight size={18} />
-          </EosButton>
-          <div className="flex justify-between items-center text-xs text-slate-500 select-none font-semibold">
-            <span>Nothing useful should ever become waste.</span>
-            <span>OS 2.0</span>
-          </div>
+        {/* Footer */}
+        <div className="pt-6 max-w-xl w-full mx-auto lg:mx-0 flex justify-between items-center text-xs text-slate-500 font-semibold">
+          <span>Nothing useful should ever become waste.</span>
+          <span>OS 2.0</span>
         </div>
 
       </div>
 
-      {/* RIGHT SIDE: PORTAL DYNAMIC PREVIEW PANEL */}
-      <div className="hidden lg:flex w-1/2 bg-[#0F172A] border-l border-white/10 p-12 flex-col justify-center items-center relative overflow-hidden">
-        {/* Glow Spheres */}
+      {/* RIGHT SIDE: DYNAMIC LOGIN PANEL (Sprint 10.8.3) */}
+      <div className="w-full lg:w-1/2 p-6 md:p-12 flex flex-col justify-center items-center relative overflow-hidden bg-[#0F172A] lg:h-screen lg:overflow-y-auto">
+        {/* Radial glow backdrops mapping dynamic accent colors */}
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-radial from-[#00BCD4]/5 to-transparent rounded-full filter blur-3xl pointer-events-none" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-radial from-[#2E7D32]/5 to-transparent rounded-full filter blur-3xl pointer-events-none" />
 
@@ -436,12 +269,127 @@ export const Login: React.FC = () => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.25 }}
-              className="bg-[#0B1220] border border-white/10 p-12 rounded-[2.5rem] shadow-2xl relative"
+              className="bg-[#0B1220] border border-white/10 p-8 md:p-10 rounded-[2.5rem] shadow-2xl relative w-full text-left"
             >
-              {/* Radial glow background corresponding to selection */}
-              <div className={`absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl ${selectedPortal.glow} rounded-bl-full pointer-events-none`} />
-              
-              {renderRightPanelContent()}
+              {/* Dynamic Header Badge & Details */}
+              <div className="flex flex-col gap-4 mb-8">
+                <div className="flex items-center gap-3">
+                  <span className={`h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center ${selectedPortal.colorClass}`}>
+                    <IconComponent size={24} />
+                  </span>
+                  <div>
+                    <Typography variant="h3" className="font-bold text-white leading-tight">
+                      Login to {selectedPortal.title}
+                    </Typography>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mt-0.5">
+                      {selectedPortal.subtitle}
+                    </span>
+                  </div>
+                </div>
+                
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  {selectedPortal.desc}
+                </p>
+              </div>
+
+              {errorMsg && (
+                <div className="mb-6 flex items-start gap-2.5 p-3.5 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-xs font-semibold animate-shake">
+                  <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
+
+              {/* Dynamic Login Form */}
+              <form onSubmit={handleLoginSubmit} className="flex flex-col gap-4">
+                {/* Email Input */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email Address</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-3.5 text-slate-500">
+                      <Mail size={16} />
+                    </span>
+                    <input 
+                      type="email" 
+                      value={email} 
+                      onChange={(e) => setEmail(e.target.value)} 
+                      placeholder="agent@earthos.ai" 
+                      className={`w-full bg-[#0F172A]/80 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white text-sm focus:outline-none transition-all ${selectedPortal.focusRing}`}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Password Input */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Password</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-3.5 text-slate-500">
+                      <KeyRound size={16} />
+                    </span>
+                    <input 
+                      type="password" 
+                      value={password} 
+                      onChange={(e) => setPassword(e.target.value)} 
+                      placeholder="••••••••" 
+                      className={`w-full bg-[#0F172A]/80 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white text-sm focus:outline-none transition-all ${selectedPortal.focusRing}`}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Remember Me & Forgot Password */}
+                <div className="flex justify-between items-center text-xs mt-1 select-none font-semibold">
+                  <label className="flex items-center gap-2 cursor-pointer text-slate-400 hover:text-white transition-colors">
+                    <input 
+                      type="checkbox" 
+                      checked={rememberMe} 
+                      onChange={(e) => setRememberMe(e.target.checked)} 
+                      className="rounded border-white/10 bg-white/5 text-cyan-500 focus:ring-0 focus:ring-offset-0 h-4 w-4"
+                    />
+                    <span>Remember Me</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/forgot-password')}
+                    className={`hover:underline ${selectedPortal.accentText}`}
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+
+                {/* Dynamic Login Action Button */}
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className={`w-full mt-4 flex items-center justify-between px-6 py-3.5 rounded-xl font-bold transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0B1220] ${selectedPortal.btnClass}`}
+                >
+                  {isLoading ? (
+                    <span className="flex items-center gap-2 w-full justify-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Verifying Node...
+                    </span>
+                  ) : (
+                    <>
+                      <span>Proceed to Dashboard</span>
+                      <ArrowRight size={18} />
+                    </>
+                  )}
+                </button>
+
+                {/* Google Sign In Integration */}
+                <button
+                  type="button"
+                  onClick={() => alert('Initiating Google Federated Sign-in...')}
+                  className="w-full flex items-center justify-center gap-2 border border-white/10 bg-white/5 hover:bg-white/10 text-white rounded-xl py-3 text-xs font-semibold mt-2 transition-all"
+                >
+                  <Chrome size={16} className="text-[#DB4437]" />
+                  <span>Authenticate with Google</span>
+                </button>
+
+              </form>
             </motion.div>
           </AnimatePresence>
         </div>
