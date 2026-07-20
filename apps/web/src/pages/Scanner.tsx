@@ -21,13 +21,26 @@ import {
 } from 'lucide-react';
 import { barcodeService } from '../features/ai-scanner/services/barcodeService';
 import { ocrService, OCRResult } from '../features/ai-scanner/services/ocrService';
-import { aiRegistry } from '../features/ai-scanner/services/aiProviderRegistry';
 import { ObjectRecognitionResult } from '../features/ai-scanner/types/ai';
-import { carbonService, CarbonEstimate } from '../features/ai-scanner/services/carbonService';
-import { scanHistoryService, ScanHistoryItem } from '../features/ai-scanner/services/scanHistoryService';
+import { CarbonEstimate } from '../features/ai-scanner/services/carbonService';
+import { useAuthStore } from '../stores/authStore';
+
+interface ScanHistoryItem {
+  _id: string;
+  timestamp: string;
+  createdAt: string;
+  status: 'success' | 'failed';
+  category: string;
+  barcode: string | null;
+  ocrData: any;
+  aiResult: any;
+  carbonEstimate: any;
+  image?: string;
+}
 
 export const Scanner: React.FC = () => {
   const navigate = useNavigate();
+  const accessToken = useAuthStore((state) => state.accessToken);
   const [viewTab, setViewTab] = useState<'scan' | 'history'>('scan');
   
   // Scanner state
@@ -54,6 +67,15 @@ export const Scanner: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
+
   // Clean up media streams when leaving the page or changing modes
   const cleanupStream = useCallback(() => {
     barcodeService.stopVideoScan();
@@ -72,18 +94,31 @@ export const Scanner: React.FC = () => {
     };
   }, [cleanupStream]);
 
-  // Load history data whenever filters or pagination parameters change
-  const loadHistory = useCallback(() => {
-    const data = scanHistoryService.queryHistory({
-      page: historyPage,
-      limit: 5,
-      search: historySearch,
-      category: historyCategory,
-      startDate: historyStartDate,
-      endDate: historyEndDate
-    });
-    setHistoryData(data);
-  }, [historyPage, historySearch, historyCategory, historyStartDate, historyEndDate]);
+  // Fetch scan history records from backend API
+  const loadHistory = useCallback(async () => {
+    try {
+      const queryParams = new URLSearchParams({
+        page: historyPage.toString(),
+        limit: '5',
+        search: historySearch,
+        category: historyCategory,
+        startDate: historyStartDate,
+        endDate: historyEndDate
+      });
+
+      const response = await fetch(`http://localhost:8000/api/v1/scanner/history?${queryParams}`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken || 'mock_jwt_access_token'}`
+        }
+      });
+      const resData = await response.json();
+      if (response.ok) {
+        setHistoryData(resData);
+      }
+    } catch (error) {
+      console.error('Failed to load history:', error);
+    }
+  }, [historyPage, historySearch, historyCategory, historyStartDate, historyEndDate, accessToken]);
 
   useEffect(() => {
     if (viewTab === 'history') {
@@ -154,32 +189,6 @@ export const Scanner: React.FC = () => {
     return null;
   };
 
-  const processScanData = async (
-    aiData: ObjectRecognitionResult | null,
-    textData: { type: 'barcode' | 'ocr'; data: any }
-  ) => {
-    const category = aiData?.category || 'Electronics';
-    // Heuristic: brand as material
-    const brandMaterial = textData.type === 'ocr' ? (textData.data as OCRResult).structuredData.brand || 'Plastic' : 'Plastic';
-    
-    // Estimate manufacturing carbon footprint & lifespan
-    const carbonEstimate = carbonService.calculateCarbonEstimate(category, brandMaterial, 2);
-
-    setAiResult(aiData);
-    setCarbonResult(carbonEstimate);
-
-    // Save scan to local history database
-    scanHistoryService.addScan({
-      status: aiData ? 'success' : 'failed',
-      category,
-      image: null, // Avoid storing base64 to prevent exceeding local storage quota
-      barcode: textData.type === 'barcode' ? (textData.data as string) : null,
-      ocrData: textData.type === 'ocr' ? (textData.data as OCRResult) : null,
-      aiResult: aiData,
-      carbonEstimate
-    });
-  };
-
   // Handle Upload Mode
   const triggerUpload = () => {
     fileInputRef.current?.click();
@@ -197,24 +206,31 @@ export const Scanner: React.FC = () => {
       setIsScanning(true);
 
       try {
-        const aiPromise = aiRegistry.getProvider().analyzeObject(file);
-        const textPromise = barcodeService.scanImage(file).then(async (barcode) => {
-          if (barcode) return { type: 'barcode' as const, data: barcode };
-          const result = await ocrService.analyzeImage(file);
-          return { type: 'ocr' as const, data: result };
+        const base64 = await fileToBase64(file);
+        
+        // Pipe scanning request to standard secure backend AI endpoint
+        const response = await fetch('http://localhost:8000/api/v1/scanner/scan', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken || 'mock_jwt_access_token'}`
+          },
+          body: JSON.stringify({ image: base64, barcode: null })
         });
 
-        const [aiData, textData] = await Promise.all([aiPromise, textPromise]);
-        
-        if (textData.type === 'barcode') {
-          setDecodedResult(textData.data as string);
-        } else {
-          setOcrData(textData.data as OCRResult);
+        const resData = await response.json();
+        if (!response.ok) {
+          throw new Error(resData.error?.message || 'Failed to analyze object.');
         }
 
-        await processScanData(aiData, textData);
+        const data = resData.data;
+        setAiResult(data.aiResult);
+        setOcrData(data.ocrData);
+        setDecodedResult(data.barcode);
+        setCarbonResult(data.carbonEstimate);
       } catch (err) {
         console.error('Scanning failed:', err);
+        alert(err instanceof Error ? err.message : 'Scanning failed.');
       } finally {
         setIsScanning(false);
       }
@@ -228,21 +244,33 @@ export const Scanner: React.FC = () => {
       setIsScanning(true);
       cleanupStream();
 
+      // Wait a tick for UI update, then POST to backend
       setTimeout(async () => {
-        if (canvasRef.current) {
-          try {
-            const aiPromise = aiRegistry.getProvider().analyzeObject(canvasRef.current);
-            const ocrPromise = ocrService.analyzeImage(canvasRef.current);
-            
-            const [aiData, ocrRes] = await Promise.all([aiPromise, ocrPromise]);
-            
-            setOcrData(ocrRes);
-            await processScanData(aiData, { type: 'ocr', data: ocrRes });
-          } catch (err) {
-            console.error('Processing captured frame failed:', err);
-          } finally {
-            setIsScanning(false);
+        try {
+          const response = await fetch('http://localhost:8000/api/v1/scanner/scan', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken || 'mock_jwt_access_token'}`
+            },
+            body: JSON.stringify({ image, barcode: decodedResult })
+          });
+
+          const resData = await response.json();
+          if (!response.ok) {
+            throw new Error(resData.error?.message || 'Failed to analyze image.');
           }
+
+          const data = resData.data;
+          setAiResult(data.aiResult);
+          setOcrData(data.ocrData);
+          setDecodedResult(data.barcode);
+          setCarbonResult(data.carbonEstimate);
+        } catch (err) {
+          console.error('Processing captured frame failed:', err);
+          alert(err instanceof Error ? err.message : 'Processing failed.');
+        } finally {
+          setIsScanning(false);
         }
       }, 100);
     }
@@ -259,7 +287,6 @@ export const Scanner: React.FC = () => {
   };
 
   const handleRegister = () => {
-    // Structure custom scanMetadata to attach to the final Object Model payload
     const scanMetadata = {
       ocrResults: ocrData?.structuredData || null,
       aiSuggestions: aiResult ? {
@@ -281,7 +308,7 @@ export const Scanner: React.FC = () => {
       serialNumber: ocrData?.structuredData.serialNumber || '',
       purchaseDate: ocrData?.structuredData.purchaseDate || new Date().toISOString().split('T')[0],
       condition: mapCondition(aiResult?.condition),
-      currentValue: carbonResult?.reuseBenefit || 500, // Reuse benefit as base valuation heuristic
+      currentValue: carbonResult?.reuseBenefit || 500,
       description: aiResult ? `AI Visual Recognition Category: ${aiResult.category}. Damage detected: ${aiResult.damageDetected.join(', ') || 'None'}.` : 'Scanned via AI Scanner.',
       warrantyExpiry: ocrData?.structuredData.warrantyDate || '',
       barcode: decodedResult || undefined,
@@ -296,20 +323,42 @@ export const Scanner: React.FC = () => {
     setOcrData(item.ocrData);
     setDecodedResult(item.barcode);
     setCarbonResult(item.carbonEstimate);
-    setCapturedImage(item.image);
+    setCapturedImage(item.image || null);
     setActiveMode('upload');
     setViewTab('scan');
   };
 
-  const handleDeleteHistoryItem = (id: string) => {
-    scanHistoryService.deleteScan(id);
-    loadHistory();
+  const handleDeleteHistoryItem = async (id: string) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/v1/scanner/history/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${accessToken || 'mock_jwt_access_token'}`
+        }
+      });
+      if (response.ok) {
+        loadHistory();
+      }
+    } catch (error) {
+      console.error('Failed to delete history item:', error);
+    }
   };
 
-  const handleClearAllHistory = () => {
+  const handleClearAllHistory = async () => {
     if (window.confirm('Are you sure you want to clear your entire scan history?')) {
-      scanHistoryService.clearHistory();
-      loadHistory();
+      try {
+        const response = await fetch(`http://localhost:8000/api/v1/scanner/history`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${accessToken || 'mock_jwt_access_token'}`
+          }
+        });
+        if (response.ok) {
+          loadHistory();
+        }
+      } catch (error) {
+        console.error('Failed to clear history:', error);
+      }
     }
   };
 
@@ -796,11 +845,11 @@ export const Scanner: React.FC = () => {
 
           {/* History List */}
           <div className="flex flex-col gap-4">
-            {historyData && historyData.items.length > 0 ? (
-              historyData.items.map((item: ScanHistoryItem) => (
+            {historyData && historyData.data && historyData.data.length > 0 ? (
+              historyData.data.map((item: ScanHistoryItem) => (
                 <div 
-                  key={item.id}
-                  className="flex flex-col md:flex-row md:items-center justify-between p-4 border border-[#B0BEC5]/20 rounded-xl hover:bg-white/5 transition-colors gap-4"
+                  key={item._id}
+                  className="flex flex-col md:flex-row md:items-center justify-between p-4 border border-[#B0BEC5]/20 rounded-xl hover:bg-white/5 transition-colors gap-4 animate-fade-in"
                 >
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center gap-2">
@@ -814,7 +863,7 @@ export const Scanner: React.FC = () => {
                     </div>
 
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#B0BEC5]">
-                      <span>Scanned: {new Date(item.timestamp).toLocaleString()}</span>
+                      <span>Scanned: {new Date(item.createdAt).toLocaleString()}</span>
                       {item.barcode && <span>Barcode: <span className="font-mono bg-white/10 px-1 rounded">{item.barcode}</span></span>}
                       {item.carbonEstimate && <span>Footprint: <span className="font-bold text-red-400">{item.carbonEstimate.footprint} kg CO2e</span></span>}
                     </div>
@@ -829,7 +878,7 @@ export const Scanner: React.FC = () => {
                       Reuse Result
                     </button>
                     <button 
-                      onClick={() => handleDeleteHistoryItem(item.id)}
+                      onClick={() => handleDeleteHistoryItem(item._id)}
                       className="p-2 text-gray-500 hover:text-red-500 transition-colors"
                       title="Delete log"
                     >
@@ -847,7 +896,7 @@ export const Scanner: React.FC = () => {
           </div>
 
           {/* Pagination Controls */}
-          {historyData && historyData.pagination.totalPages > 1 && (
+          {historyData && historyData.pagination && historyData.pagination.totalPages > 1 && (
             <div className="flex items-center justify-between border-t border-[#B0BEC5]/10 pt-4 mt-2">
               <Typography variant="small" className="text-slate-400">
                 Page {historyData.pagination.page} of {historyData.pagination.totalPages} ({historyData.pagination.total} records)

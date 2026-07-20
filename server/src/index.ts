@@ -9,6 +9,7 @@ import { globalErrorHandler } from './middlewares/errors';
 import authRoutes from './routes/auth';
 import objectRoutes from './routes/objects';
 import taxonomyRoutes from './routes/taxonomy';
+import scannerRoutes from './routes/scanner';
 
 const app = express();
 
@@ -56,6 +57,7 @@ app.get('/health', (req, res) => {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/objects', objectRoutes);
 app.use('/api/v1/taxonomy', taxonomyRoutes);
+app.use('/api/v1/scanner', scannerRoutes);
 
 // Global Error Interceptor middleware
 app.use(globalErrorHandler);
