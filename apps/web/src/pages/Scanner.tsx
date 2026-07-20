@@ -1,8 +1,10 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Typography, EosCard, EosButton } from '@earthos/ui';
-import { Camera, UploadCloud, X, Loader2, Maximize, Scan, RefreshCcw, QrCode, FileText } from 'lucide-react';
+import { Camera, UploadCloud, X, Loader2, Maximize, Scan, RefreshCcw, QrCode, FileText, Cpu } from 'lucide-react';
 import { barcodeService } from '../features/ai-scanner/services/barcodeService';
 import { ocrService, OCRResult } from '../features/ai-scanner/services/ocrService';
+import { aiRegistry } from '../features/ai-scanner/services/aiProviderRegistry';
+import { ObjectRecognitionResult } from '../features/ai-scanner/types/ai';
 
 export const Scanner: React.FC = () => {
   const [activeMode, setActiveMode] = useState<'idle' | 'upload' | 'camera'>('idle');
@@ -12,6 +14,7 @@ export const Scanner: React.FC = () => {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [decodedResult, setDecodedResult] = useState<string | null>(null);
   const [ocrData, setOcrData] = useState<OCRResult | null>(null);
+  const [aiResult, setAiResult] = useState<ObjectRecognitionResult | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -44,6 +47,7 @@ export const Scanner: React.FC = () => {
     setCapturedImage(null);
     setDecodedResult(null);
     setOcrData(null);
+    setAiResult(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
@@ -112,19 +116,29 @@ export const Scanner: React.FC = () => {
       setCapturedImage(null);
       setDecodedResult(null);
       setOcrData(null);
+      setAiResult(null);
       setIsScanning(true);
 
-      // Attempt barcode scan first
-      const barcodeResult = await barcodeService.scanImage(file);
-      if (barcodeResult) {
-        setDecodedResult(barcodeResult);
-        setIsScanning(false);
-      } else {
-        // Fallback to OCR
+      // Run AI Visual Analysis and Barcode/OCR concurrently
+      const aiPromise = aiRegistry.getProvider().analyzeObject(file);
+      
+      const textPromise = barcodeService.scanImage(file).then(async (barcode) => {
+        if (barcode) return { type: 'barcode', data: barcode };
         const result = await ocrService.analyzeImage(file);
-        setOcrData(result);
-        setIsScanning(false);
+        return { type: 'ocr', data: result };
+      });
+
+      const [aiData, textData] = await Promise.all([aiPromise, textPromise]);
+      
+      setAiResult(aiData);
+      
+      if (textData.type === 'barcode') {
+        setDecodedResult(textData.data as string);
+      } else {
+        setOcrData(textData.data as OCRResult);
       }
+      
+      setIsScanning(false);
     }
   };
 
@@ -135,11 +149,16 @@ export const Scanner: React.FC = () => {
       setIsScanning(true);
       cleanupStream(); // Stop camera while processing
 
-      // Wait a tick for UI update, then run heavy OCR on the canvas
+      // Wait a tick for UI update, then run heavy processing
       setTimeout(async () => {
         if (canvasRef.current) {
-          const result = await ocrService.analyzeImage(canvasRef.current);
-          setOcrData(result);
+          const aiPromise = aiRegistry.getProvider().analyzeObject(canvasRef.current);
+          const ocrPromise = ocrService.analyzeImage(canvasRef.current);
+          
+          const [aiData, ocrResult] = await Promise.all([aiPromise, ocrPromise]);
+          
+          setAiResult(aiData);
+          setOcrData(ocrResult);
           setIsScanning(false);
         }
       }, 100);
@@ -241,70 +260,97 @@ export const Scanner: React.FC = () => {
             ) : (
               <div className="relative flex-1 w-full h-full overflow-hidden flex items-center justify-center">
                 {/* Preview Captured Image or Live Video feed */}
-                {capturedImage || decodedResult || ocrData ? (
+                {capturedImage || decodedResult || ocrData || aiResult ? (
                   <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gray-900 overflow-y-auto pt-20 pb-8">
                     {capturedImage && <img src={capturedImage} alt="Captured" className="absolute inset-0 w-full h-full object-cover opacity-30" />}
                     
-                    {/* Barcode Overlay */}
-                    {decodedResult && (
-                      <div className="z-20 bg-black/70 backdrop-blur-md border border-[#4ADE80]/50 p-6 rounded-2xl flex flex-col items-center justify-center text-center max-w-sm m-4 shadow-[0_0_20px_rgba(74,222,128,0.2)]">
-                        <QrCode size={48} className="text-[#4ADE80] mb-4" />
-                        <Typography variant="h4" className="text-white">Barcode Found</Typography>
-                        <Typography variant="small" className="text-white/80 font-mono mt-2 bg-white/10 px-3 py-1 rounded-md">{decodedResult}</Typography>
-                      </div>
-                    )}
+                    <div className="z-20 w-full max-w-md m-4 flex flex-col gap-4 relative max-h-full overflow-y-auto">
+                      
+                      {/* Barcode Overlay */}
+                      {decodedResult && (
+                        <div className="bg-black/70 backdrop-blur-md border border-[#4ADE80]/50 p-6 rounded-2xl flex flex-col items-center justify-center text-center shadow-[0_0_20px_rgba(74,222,128,0.2)]">
+                          <QrCode size={48} className="text-[#4ADE80] mb-4" />
+                          <Typography variant="h4" className="text-white">Barcode Found</Typography>
+                          <Typography variant="small" className="text-white/80 font-mono mt-2 bg-white/10 px-3 py-1 rounded-md">{decodedResult}</Typography>
+                        </div>
+                      )}
 
-                    {/* OCR Results Overlay */}
-                    {ocrData && !decodedResult && (
-                      <div className="z-20 bg-black/80 backdrop-blur-md border border-white/20 p-6 rounded-2xl flex flex-col items-start w-full max-w-md m-4 relative max-h-full overflow-y-auto">
-                        <div className="flex items-center gap-3 mb-6">
-                          <FileText className="text-white" size={28} />
-                          <div>
-                            <Typography variant="h4" className="text-white">Text Extracted</Typography>
-                            <Typography variant="small" className={`font-mono ${ocrData.confidence > 70 ? 'text-green-400' : 'text-orange-400'}`}>
-                              Confidence: {ocrData.confidence.toFixed(1)}%
-                            </Typography>
+                      {/* AI Visual Analysis Overlay */}
+                      {aiResult && (
+                        <div className="bg-black/80 backdrop-blur-md border border-blue-500/30 p-6 rounded-2xl flex flex-col items-start w-full shadow-[0_0_20px_rgba(59,130,246,0.1)]">
+                          <div className="flex items-center gap-3 mb-6">
+                            <Cpu className="text-blue-400" size={28} />
+                            <div>
+                              <Typography variant="h4" className="text-white">AI Visual Analysis</Typography>
+                              <Typography variant="small" className="text-blue-400/80">Confidence: {(aiResult.confidence.overall * 100).toFixed(1)}%</Typography>
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4 w-full">
+                            <div>
+                              <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs">Category</Typography>
+                              <Typography variant="body" className="text-white font-medium">{aiResult.category}</Typography>
+                            </div>
+                            <div>
+                              <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs">Product Type</Typography>
+                              <Typography variant="body" className="text-white font-medium">{aiResult.productType}</Typography>
+                            </div>
+                            <div>
+                              <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs">Condition</Typography>
+                              <span className={`inline-block px-2 py-1 rounded text-xs font-bold mt-1 ${aiResult.condition === 'New' || aiResult.condition === 'Good' ? 'bg-green-500/20 text-green-400' : 'bg-orange-500/20 text-orange-400'}`}>
+                                {aiResult.condition}
+                              </span>
+                            </div>
+                            <div className="col-span-2 mt-2">
+                              <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs mb-1 block">Visible Damage</Typography>
+                              {aiResult.damageDetected.length > 0 ? (
+                                <div className="flex flex-wrap gap-2">
+                                  {aiResult.damageDetected.map((d, i) => (
+                                    <span key={i} className="bg-red-500/20 border border-red-500/30 text-red-300 px-2 py-1 rounded text-xs">
+                                      {d}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <Typography variant="small" className="text-white/50">None detected</Typography>
+                              )}
+                            </div>
                           </div>
                         </div>
+                      )}
 
-                        <div className="w-full space-y-4">
-                          <Typography variant="h5" className="text-white/70 border-b border-white/10 pb-2">Structured Data</Typography>
-                          <div className="grid grid-cols-2 gap-4">
+                      {/* OCR Results Overlay */}
+                      {ocrData && !decodedResult && (
+                        <div className="bg-black/80 backdrop-blur-md border border-white/20 p-6 rounded-2xl flex flex-col items-start w-full">
+                          <div className="flex items-center gap-3 mb-6">
+                            <FileText className="text-white" size={28} />
                             <div>
-                              <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs">Brand</Typography>
-                              <Typography variant="body" className="text-white font-medium">{ocrData.structuredData.brand || 'Unknown'}</Typography>
-                            </div>
-                            <div>
-                              <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs">Model Number</Typography>
-                              <Typography variant="body" className="text-white font-medium">{ocrData.structuredData.modelNumber || 'Not Found'}</Typography>
-                            </div>
-                            <div className="col-span-2">
-                              <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs">Serial Number</Typography>
-                              <Typography variant="body" className="text-white font-medium font-mono">{ocrData.structuredData.serialNumber || 'Not Found'}</Typography>
-                            </div>
-                            <div>
-                              <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs">Purchase Date</Typography>
-                              <Typography variant="body" className="text-white font-medium">{ocrData.structuredData.purchaseDate || 'Not Found'}</Typography>
-                            </div>
-                            <div>
-                              <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs">Warranty</Typography>
-                              <Typography variant="body" className="text-white font-medium">{ocrData.structuredData.warrantyDate || 'Not Found'}</Typography>
+                              <Typography variant="h4" className="text-white">Text Extracted</Typography>
+                              <Typography variant="small" className={`font-mono ${ocrData.confidence > 70 ? 'text-green-400' : 'text-orange-400'}`}>
+                                Confidence: {ocrData.confidence.toFixed(1)}%
+                              </Typography>
                             </div>
                           </div>
 
-                          <div className="mt-6">
-                            <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs mb-2 block">Raw Output</Typography>
-                            <pre className="text-xs text-white/50 font-mono bg-white/5 p-3 rounded-lg overflow-x-auto whitespace-pre-wrap max-h-32">
-                              {ocrData.rawText}
-                            </pre>
+                          <div className="w-full space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="col-span-2">
+                                <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs">Serial Number</Typography>
+                                <Typography variant="body" className="text-white font-medium font-mono">{ocrData.structuredData.serialNumber || 'Not Found'}</Typography>
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs">Model Number</Typography>
+                                <Typography variant="body" className="text-white font-medium font-mono">{ocrData.structuredData.modelNumber || 'Not Found'}</Typography>
+                              </div>
+                            </div>
                           </div>
                         </div>
+                      )}
 
-                        <EosButton variant="primary" className="w-full mt-6" onClick={() => setActiveMode('idle')}>
-                          Done
-                        </EosButton>
-                      </div>
-                    )}
+                      <EosButton variant="primary" className="w-full mt-2" onClick={() => setActiveMode('idle')}>
+                        Done
+                      </EosButton>
+                    </div>
                   </div>
                 ) : (
                   <video 
@@ -318,7 +364,7 @@ export const Scanner: React.FC = () => {
                 
                 {/* Viewfinder Overlay */}
                 <div className="absolute inset-0 pointer-events-none border-[40px] border-black/40"></div>
-                {!capturedImage && !decodedResult && !ocrData && (
+                {!capturedImage && !decodedResult && !ocrData && !aiResult && (
                   <div className="relative z-10 w-64 h-64 md:w-80 md:h-80 border-2 border-white/50 rounded-xl flex items-center justify-center pointer-events-none">
                     <Maximize size={48} className="text-white/30" />
                     
@@ -332,7 +378,7 @@ export const Scanner: React.FC = () => {
                 )}
 
                 {/* Capture Controls */}
-                {!capturedImage && !decodedResult && !ocrData && (
+                {!capturedImage && !decodedResult && !ocrData && !aiResult && (
                   <div className="absolute bottom-8 left-0 right-0 flex justify-center z-20">
                     <button 
                       onClick={executeCapture}
@@ -353,57 +399,92 @@ export const Scanner: React.FC = () => {
           <div className="absolute inset-0 bg-white/90 dark:bg-[#0B1220]/90 backdrop-blur-sm flex flex-col items-center justify-center z-50">
             <Loader2 size={48} className="animate-spin text-[#1F2937] dark:text-[#F8FAFC] mb-4" />
             
-            <Typography variant="h3" className="font-display">Running Optical Recognition...</Typography>
-            <Typography variant="small" className="text-[#B0BEC5] mt-2">Extracting serial numbers and structured text via Tesseract.</Typography>
+            <Typography variant="h3" className="font-display">AI Deep Scan Running...</Typography>
+            <Typography variant="small" className="text-[#B0BEC5] mt-2">Analyzing image for object category, condition, and extracting text.</Typography>
           </div>
         )}
 
-        {/* Global OCR Results Overlay for Upload */}
-        {!isScanning && activeMode === 'upload' && ocrData && (
+        {/* Global Combined Results Overlay for Upload */}
+        {!isScanning && activeMode === 'upload' && (ocrData || aiResult) && (
           <div className="absolute inset-0 bg-white dark:bg-[#0B1220] flex flex-col items-start p-8 z-40 overflow-y-auto">
-            <button onClick={() => { setOcrData(null); setActiveMode('idle'); }} className="mb-6 text-[#1F2937] dark:text-[#F8FAFC] hover:opacity-70 transition-opacity">
+            <button onClick={() => { setOcrData(null); setAiResult(null); setActiveMode('idle'); }} className="mb-6 text-[#1F2937] dark:text-[#F8FAFC] hover:opacity-70 transition-opacity">
               <X size={24} />
             </button>
-            <div className="flex items-center gap-3 mb-8 border-b border-[#B0BEC5]/30 pb-4 w-full">
-              <FileText className="text-[#1F2937] dark:text-[#F8FAFC]" size={32} />
-              <div>
-                <Typography variant="h3" className="font-display">OCR Results</Typography>
-                <Typography variant="small" className={`font-mono ${ocrData.confidence > 70 ? 'text-green-500' : 'text-orange-500'}`}>
-                  Confidence: {ocrData.confidence.toFixed(1)}%
-                </Typography>
-              </div>
-            </div>
-
+            
             <div className="w-full max-w-3xl mx-auto space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs mb-1 block">Brand / Product</Typography>
-                  <Typography variant="h4">{ocrData.structuredData.brand || 'Unknown'} {ocrData.structuredData.productName || ''}</Typography>
+              
+              {/* AI Visual Analysis Section */}
+              {aiResult && (
+                <div className="border border-blue-500/20 bg-blue-500/5 p-6 rounded-2xl">
+                  <div className="flex items-center gap-3 mb-6 border-b border-blue-500/20 pb-4">
+                    <Cpu className="text-blue-500" size={32} />
+                    <div>
+                      <Typography variant="h3" className="font-display text-blue-500">AI Visual Analysis</Typography>
+                      <Typography variant="small" className="font-mono text-blue-500/80">
+                        Confidence: {(aiResult.confidence.overall * 100).toFixed(1)}%
+                      </Typography>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs mb-1 block">Category</Typography>
+                      <Typography variant="h4">{aiResult.category}</Typography>
+                    </div>
+                    <div>
+                      <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs mb-1 block">Product Type</Typography>
+                      <Typography variant="h4">{aiResult.productType}</Typography>
+                    </div>
+                    <div>
+                      <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs mb-1 block">Condition</Typography>
+                      <span className={`inline-block px-3 py-1 rounded text-sm font-bold ${aiResult.condition === 'New' || aiResult.condition === 'Good' ? 'bg-green-500/20 text-green-500' : 'bg-orange-500/20 text-orange-500'}`}>
+                        {aiResult.condition}
+                      </span>
+                    </div>
+                    <div>
+                      <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs mb-1 block">Damage</Typography>
+                      {aiResult.damageDetected.length > 0 ? (
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {aiResult.damageDetected.map((d, i) => (
+                            <span key={i} className="bg-red-500/10 border border-red-500/20 text-red-500 px-2 py-1 rounded text-xs font-bold">
+                              {d}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <Typography variant="body" className="text-[#B0BEC5]">None detected</Typography>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs mb-1 block">Model Number</Typography>
-                  <Typography variant="h4" className="font-mono">{ocrData.structuredData.modelNumber || 'Not Found'}</Typography>
-                </div>
-                <div className="md:col-span-2">
-                  <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs mb-1 block">Serial Number</Typography>
-                  <Typography variant="h4" className="font-mono">{ocrData.structuredData.serialNumber || 'Not Found'}</Typography>
-                </div>
-                <div>
-                  <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs mb-1 block">Purchase Date</Typography>
-                  <Typography variant="h4">{ocrData.structuredData.purchaseDate || 'Not Found'}</Typography>
-                </div>
-                <div>
-                  <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs mb-1 block">Warranty Date</Typography>
-                  <Typography variant="h4">{ocrData.structuredData.warrantyDate || 'Not Found'}</Typography>
-                </div>
-              </div>
+              )}
 
-              <div className="pt-6 border-t border-[#B0BEC5]/30">
-                <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs mb-3 block">Raw Extracted Text</Typography>
-                <pre className="text-xs font-mono bg-black/5 dark:bg-white/5 p-4 rounded-xl overflow-x-auto whitespace-pre-wrap max-h-60 border border-[#B0BEC5]/20">
-                  {ocrData.rawText}
-                </pre>
-              </div>
+              {/* OCR Results Section */}
+              {ocrData && (
+                <div className="border border-[#B0BEC5]/30 p-6 rounded-2xl">
+                  <div className="flex items-center gap-3 mb-6 border-b border-[#B0BEC5]/30 pb-4 w-full">
+                    <FileText className="text-[#1F2937] dark:text-[#F8FAFC]" size={32} />
+                    <div>
+                      <Typography variant="h3" className="font-display">Text Extracted</Typography>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs mb-1 block">Brand / Product</Typography>
+                      <Typography variant="h4">{ocrData.structuredData.brand || 'Unknown'} {ocrData.structuredData.productName || ''}</Typography>
+                    </div>
+                    <div>
+                      <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs mb-1 block">Model Number</Typography>
+                      <Typography variant="h4" className="font-mono">{ocrData.structuredData.modelNumber || 'Not Found'}</Typography>
+                    </div>
+                    <div className="md:col-span-2">
+                      <Typography variant="small" className="text-[#B0BEC5] uppercase tracking-wider text-xs mb-1 block">Serial Number</Typography>
+                      <Typography variant="h4" className="font-mono">{ocrData.structuredData.serialNumber || 'Not Found'}</Typography>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
