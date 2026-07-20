@@ -35,6 +35,7 @@ import { Community } from './pages/Community';
 import { Wallet } from './pages/Wallet';
 import { Settings } from './pages/Settings';
 import { Analytics } from './pages/Analytics';
+import { PublicPassport } from './pages/PublicPassport';
 
 // Route Protection
 import { PrivateRoute, GuestRoute, RoleRoute, AppRedirect } from './components/RouteProtection';
@@ -62,6 +63,7 @@ function App() {
             <Route path="features" element={<Features />} />
             <Route path="pricing" element={<Pricing />} />
             <Route path="contact" element={<Contact />} />
+            <Route path="passport/:passportId" element={<PublicPassport />} />
           </Route>
 
           {/* Guest Only Auth Flow */}

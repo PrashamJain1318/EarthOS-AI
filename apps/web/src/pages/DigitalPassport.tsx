@@ -54,8 +54,8 @@ export const DigitalPassport: React.FC = () => {
     }
   };
 
-  // Generate a URL for the QR code (typically public verification page, but pointing to this page for now)
-  const verificationUrl = window.location.href;
+  // Generate a public URL for the QR code verification page
+  const verificationUrl = `${window.location.origin}/passport/${object.passportId || object.objectId}`;
 
   return (
     <div className="w-full max-w-4xl mx-auto pb-12 flex flex-col gap-8 print:p-0 print:m-0 print:bg-white print:text-black">
@@ -97,7 +97,7 @@ export const DigitalPassport: React.FC = () => {
               <div className="flex items-center gap-2">
                 <ShieldCheck size={18} className="text-[#00BCD4] print:text-black" />
                 <Typography variant="body" className="font-mono text-gray-500 font-semibold uppercase tracking-wider print:text-gray-600">
-                  ID: {object.objectId}
+                  ID: {object.passportId || object.objectId}
                 </Typography>
               </div>
             </div>

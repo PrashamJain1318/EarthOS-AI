@@ -74,6 +74,7 @@ export interface IObject extends Omit<Document, 'model'> {
   marketplaceStatus: typeof MARKETPLACE_STATUSES[number];
   archived: boolean;
   barcode?: string;
+  passportId?: string;
   scanMetadata?: {
     ocrResults?: any;
     aiSuggestions?: any;
@@ -272,6 +273,12 @@ const ObjectSchema = new Schema<IObject>({
   },
   scanMetadata: {
     type: Schema.Types.Mixed
+  },
+  passportId: {
+    type: String,
+    unique: true,
+    sparse: true,
+    index: true
   }
 }, {
   timestamps: true
@@ -286,10 +293,31 @@ ObjectSchema.index(
 
 // ─── Pre-save: Auto-generate objectId ────────────────────
 
-ObjectSchema.pre<IObject>('save', function (next) {
+ObjectSchema.pre<IObject>('save', async function (next) {
   if (!this.objectId) {
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     this.objectId = `EO-${randomSuffix}`;
+  }
+  if (!this.passportId) {
+    let isUnique = false;
+    let attempts = 0;
+    while (!isUnique && attempts < 10) {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let randomPart = '';
+      for (let i = 0; i < 7; i++) {
+        randomPart += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      const candidate = `EARTH-2026-${randomPart}`;
+      const existing = await model('Object').findOne({ passportId: candidate });
+      if (!existing) {
+        this.passportId = candidate;
+        isUnique = true;
+      }
+      attempts++;
+    }
+    if (!isUnique) {
+      this.passportId = `EARTH-2026-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
+    }
   }
   next();
 });
