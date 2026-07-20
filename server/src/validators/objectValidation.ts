@@ -69,7 +69,14 @@ export const createObjectSchema = z.object({
   lifecycleStage:   z.enum(LIFECYCLE_STAGES).default('ACTIVE'),
   donationStatus:   z.enum(DONATION_STATUSES).default('NONE'),
   marketplaceStatus: z.enum(MARKETPLACE_STATUSES).default('NONE'),
-  archived:         z.boolean().default(false)
+  archived:         z.boolean().default(false),
+  barcode:          z.string().trim().optional(),
+  scanMetadata:     z.object({
+    ocrResults:     z.any().optional(),
+    aiSuggestions:  z.any().optional(),
+    carbonEstimate: z.any().optional(),
+    originalImage:  z.string().optional()
+  }).optional()
 });
 
 export type CreateObjectInput = z.infer<typeof createObjectSchema>;

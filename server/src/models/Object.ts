@@ -73,6 +73,13 @@ export interface IObject extends Omit<Document, 'model'> {
   donationStatus: typeof DONATION_STATUSES[number];
   marketplaceStatus: typeof MARKETPLACE_STATUSES[number];
   archived: boolean;
+  barcode?: string;
+  scanMetadata?: {
+    ocrResults?: any;
+    aiSuggestions?: any;
+    carbonEstimate?: any;
+    originalImage?: string;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -256,6 +263,15 @@ const ObjectSchema = new Schema<IObject>({
     type: Boolean,
     default: false,
     index: true
+  },
+  barcode: {
+    type: String,
+    trim: true,
+    index: true,
+    sparse: true
+  },
+  scanMetadata: {
+    type: Schema.Types.Mixed
   }
 }, {
   timestamps: true

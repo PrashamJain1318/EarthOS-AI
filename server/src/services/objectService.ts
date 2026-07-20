@@ -1,5 +1,5 @@
 import { objectRepository, PaginationOptions, PaginatedResult } from '../repositories/objectRepository';
-import { IObject } from '../models/Object';
+import { IObject, ObjectModel } from '../models/Object';
 import { taxonomyService } from './taxonomyService';
 
 export class AppValidationError extends Error {
@@ -18,6 +18,19 @@ export const objectService = {
    * Registers a new resource object.
    */
   async createObject(userId: string, data: Partial<IObject>): Promise<IObject> {
+    if (data.serialNumber) {
+      const existing = await ObjectModel.findOne({ userId, serialNumber: data.serialNumber });
+      if (existing) {
+        throw new AppValidationError(`An object with serial number "${data.serialNumber}" is already registered.`, 'DUPLICATE_OBJECT', 409);
+      }
+    }
+    if (data.barcode) {
+      const existing = await ObjectModel.findOne({ userId, barcode: data.barcode });
+      if (existing) {
+        throw new AppValidationError(`An object with barcode "${data.barcode}" is already registered.`, 'DUPLICATE_OBJECT', 409);
+      }
+    }
+
     if (data.tags) {
       data.tags = await taxonomyService.processTags(data.tags);
     }

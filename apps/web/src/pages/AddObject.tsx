@@ -182,6 +182,8 @@ export const AddObject: React.FC = () => {
     const finalPayload = {
       ...values,
       tags,
+      barcode: autofill?.barcode || undefined,
+      scanMetadata: autofill?.scanMetadata || undefined,
       warranty: {
         ...values.warranty,
         reminders,
@@ -220,10 +222,15 @@ export const AddObject: React.FC = () => {
 
       // Clear temp blobs
       images.forEach(img => URL.revokeObjectURL(img.url));
-
-      // Redirect back to catalog
+ 
+      // Redirect to newly created object details page
       setTimeout(() => {
-        navigate('/objects');
+        const objectId = resData.data?._id || resData.data?.objectId;
+        if (objectId) {
+          navigate(`/portal/user/objects/${objectId}`);
+        } else {
+          navigate('/portal/user/my-objects');
+        }
       }, 1500);
 
     } catch (err) {
@@ -253,7 +260,7 @@ export const AddObject: React.FC = () => {
       {/* Header row */}
       <div className="flex items-center gap-3">
         <button 
-          onClick={() => navigate('/objects')}
+          onClick={() => navigate('/portal/user/my-objects')}
           className="p-2 rounded-xl bg-gray-50/50 dark:bg-white/5 border border-slate-200 dark:border-slate-800 text-gray-500 hover:text-[#1F2937] dark:hover:text-[#F8FAFC] transition-colors"
           aria-label="Back to catalog"
         >
@@ -587,7 +594,7 @@ export const AddObject: React.FC = () => {
           <EosButton
             variant="secondary"
             type="button"
-            onClick={() => navigate('/objects')}
+            onClick={() => navigate('/portal/user/my-objects')}
             disabled={isSubmitting}
             className="px-6 py-2.5 font-bold"
           >
