@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -83,6 +83,9 @@ interface ToastState {
 
 export const AddObject: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const autofill = location.state?.autofill;
+  
   const accessToken = useAuthStore((state) => state.accessToken);
   
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -105,10 +108,18 @@ export const AddObject: React.FC = () => {
   } = useForm<ObjectFormValues>({
     resolver: zodResolver(objectFormSchema),
     defaultValues: {
-      condition: 'GOOD',
+      objectName: autofill?.objectName || '',
+      category: autofill?.category || '',
+      brand: autofill?.brand || '',
+      model: autofill?.model || '',
+      serialNumber: autofill?.serialNumber || '',
+      purchaseDate: autofill?.purchaseDate || '',
+      condition: autofill?.condition || 'GOOD',
+      currentValue: autofill?.currentValue || undefined,
+      description: autofill?.description || '',
+      warrantyExpiry: autofill?.warrantyExpiry || '',
       quantity: 1,
       currency: 'USD',
-      category: '',
       location: {
         address: '',
         city: '',
