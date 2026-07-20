@@ -1,7 +1,22 @@
 import React, { useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { EosButton, Typography } from '@earthos/ui';
-import { ArrowLeft, Printer, Share2, Globe, ShieldCheck, Leaf, Activity } from 'lucide-react';
+import { EosButton, Typography, EosBadge } from '@earthos/ui';
+import { 
+  ArrowLeft, 
+  Printer, 
+  Share2, 
+  Globe, 
+  ShieldCheck, 
+  Leaf, 
+  Activity, 
+  Calendar, 
+  Tag, 
+  Hammer, 
+  Gift, 
+  ShoppingBag, 
+  Recycle,
+  FileText
+} from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useObject } from '../hooks/useObjects';
 import { ObjectDetailsSkeleton } from '../components/objects/details/ObjectDetailsSkeleton';
@@ -24,7 +39,7 @@ export const DigitalPassport: React.FC = () => {
   if (isError || !object) {
     return (
       <div className="w-full max-w-[1400px] mx-auto pb-12 flex flex-col gap-4">
-        <EosButton variant="secondary" onClick={() => navigate(`/objects/${id}`)} className="w-fit">
+        <EosButton variant="secondary" onClick={() => navigate(`/portal/user/objects/${id}`)} className="w-fit">
           <ArrowLeft size={16} className="mr-1.5" /> Back to Object
         </EosButton>
         <ObjectError message={(error as Error)?.message || 'Object not found.'} onRetry={() => refetch()} />
@@ -37,7 +52,7 @@ export const DigitalPassport: React.FC = () => {
   };
 
   const handleShare = async () => {
-    const url = window.location.href;
+    const url = `${window.location.origin}/passport/${object.passportId || object.objectId}`;
     if (navigator.share) {
       try {
         await navigator.share({
@@ -50,19 +65,99 @@ export const DigitalPassport: React.FC = () => {
       }
     } else {
       navigator.clipboard.writeText(url);
-      alert('Passport URL copied to clipboard!');
+      alert('Public Verification Passport URL copied to clipboard!');
     }
   };
 
   // Generate a public URL for the QR code verification page
   const verificationUrl = `${window.location.origin}/passport/${object.passportId || object.objectId}`;
 
+  // Warranty Calculator Helper
+  const getWarrantyStatus = (expiryDateStr: string | undefined) => {
+    if (!expiryDateStr) return { label: 'No Warranty', color: 'bg-slate-500/20 text-slate-400' };
+    const expiry = new Date(expiryDateStr).getTime();
+    const now = Date.now();
+    
+    if (expiry < now) {
+      return { label: 'Expired', color: 'bg-red-500/20 text-red-400' };
+    }
+    
+    const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+    if (expiry - now <= thirtyDays) {
+      return { label: 'Expires Soon', color: 'bg-orange-500/20 text-orange-400' };
+    }
+    
+    return { label: 'Active', color: 'bg-green-500/20 text-green-400' };
+  };
+
+  const warrantyStatus = getWarrantyStatus(object.warrantyExpiry);
+
+  // Timeline events mapping
+  const timelineEvents = [
+    {
+      id: 'purchased',
+      title: 'Purchased',
+      description: object.purchaseDate ? `Acquired on ${new Date(object.purchaseDate).toLocaleDateString()}` : 'Date unrecorded',
+      active: !!object.purchaseDate,
+      icon: Calendar,
+      color: 'border-blue-500 text-blue-400'
+    },
+    {
+      id: 'scanned',
+      title: 'Passport Scanned & Minted',
+      description: `Registered in EarthOS grid on ${new Date(object.createdAt).toLocaleDateString()}`,
+      active: true,
+      icon: ShieldCheck,
+      color: 'border-cyan-500 text-cyan-400'
+    },
+    {
+      id: 'warranty',
+      title: `Warranty Status: ${warrantyStatus.label}`,
+      description: object.warrantyExpiry ? `Coverage valid until ${new Date(object.warrantyExpiry).toLocaleDateString()}` : 'No warranty protection active',
+      active: warrantyStatus.label === 'Active' || warrantyStatus.label === 'Expires Soon',
+      icon: Tag,
+      color: 'border-[#2E7D32] text-green-400'
+    },
+    {
+      id: 'repair',
+      title: 'Circularity Repairs',
+      description: object.repairCount > 0 ? `${object.repairCount} repair logs documented` : 'Zero repair logs registered',
+      active: object.repairCount > 0 || object.lifecycleStage === 'REPAIR',
+      icon: Hammer,
+      color: 'border-orange-500 text-orange-400'
+    },
+    {
+      id: 'donation',
+      title: 'Donation Channel',
+      description: object.donationStatus !== 'NONE' ? `Status is ${object.donationStatus.toLowerCase()}` : 'Not listed for donation',
+      active: object.donationStatus !== 'NONE',
+      icon: Gift,
+      color: 'border-purple-500 text-purple-400'
+    },
+    {
+      id: 'marketplace',
+      title: 'Marketplace Listing',
+      description: object.marketplaceStatus !== 'NONE' ? `Status is ${object.marketplaceStatus.toLowerCase()}` : 'No secondary market listings active',
+      active: object.marketplaceStatus !== 'NONE',
+      icon: ShoppingBag,
+      color: 'border-pink-500 text-pink-400'
+    },
+    {
+      id: 'recycle',
+      title: 'Recycling Loop',
+      description: object.lifecycleStage === 'RECYCLED' || object.lifecycleStage === 'DISPOSED' ? 'End of life loop: Recycled & sorted' : 'Active usage cycle (not yet recycled)',
+      active: object.lifecycleStage === 'RECYCLED' || object.lifecycleStage === 'DISPOSED',
+      icon: Recycle,
+      color: 'border-teal-500 text-teal-400'
+    }
+  ];
+
   return (
     <div className="w-full max-w-4xl mx-auto pb-12 flex flex-col gap-8 print:p-0 print:m-0 print:bg-white print:text-black">
       
       {/* Header Actions - Hidden when printing */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 print:hidden">
-        <EosButton variant="secondary" onClick={() => navigate(`/objects/${id}`)} className="w-fit" aria-label="Back">
+        <EosButton variant="secondary" onClick={() => navigate(`/portal/user/objects/${id}`)} className="w-fit" aria-label="Back">
           <ArrowLeft size={16} className="mr-1.5" /> Back to Details
         </EosButton>
         <div className="flex gap-2">
@@ -117,93 +212,149 @@ export const DigitalPassport: React.FC = () => {
           </div>
         </div>
 
-        {/* Passport Body */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-          
-          {/* Identity Block */}
-          <div className="flex flex-col gap-6">
+        {/* Certificate Specs & Image */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+          {/* Image Box */}
+          <div className="md:col-span-1 border border-gray-100 dark:border-white/10 rounded-2xl overflow-hidden aspect-square flex items-center justify-center bg-gray-50 dark:bg-black/35 print:border-gray-300">
+            {object.images && object.images.length > 0 ? (
+              <img src={object.images[0]} alt={object.objectName} className="w-full h-full object-cover" />
+            ) : (
+              <FileText size={48} className="text-gray-300 dark:text-white/20" />
+            )}
+          </div>
+
+          {/* Product Specifications */}
+          <div className="md:col-span-2 flex flex-col gap-6">
             <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
-              <Typography variant="h6" className="font-bold uppercase tracking-widest text-[#00BCD4] print:text-black text-xs">Identity Specs</Typography>
+              <Typography variant="h6" className="font-bold uppercase tracking-widest text-[#00BCD4] print:text-black text-xs">Specifications</Typography>
             </div>
             <div className="grid grid-cols-2 gap-y-4 gap-x-4">
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Classification</span>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Product Name</span>
                 <span className="font-semibold text-[#1F2937] dark:text-white print:text-black">{object.objectName}</span>
               </div>
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-0.5">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Category</span>
                 <span className="font-semibold text-[#1F2937] dark:text-white print:text-black">{object.category} {object.subCategory ? `/ ${object.subCategory}` : ''}</span>
               </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Manufacturer / Brand</span>
-                <span className="font-semibold text-[#1F2937] dark:text-white print:text-black">{object.brand || 'Unspecified'}</span>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Brand / Manufacturer</span>
+                <span className="font-semibold text-[#1F2937] dark:text-white print:text-black">{object.brand || 'Unregistered'}</span>
               </div>
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-0.5">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Model Ref</span>
                 <span className="font-semibold text-[#1F2937] dark:text-white print:text-black">{object.model || 'N/A'}</span>
               </div>
-              <div className="flex flex-col gap-1 col-span-2">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Hardware Serial (VIN/SN)</span>
-                <span className="font-mono font-semibold text-[#1F2937] dark:text-white print:text-black">{object.serialNumber || 'Unregistered'}</span>
+              <div className="flex flex-col gap-0.5 col-span-2">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Serial Number (SN)</span>
+                <span className="font-mono font-semibold text-[#1F2937] dark:text-white print:text-black">{object.serialNumber || 'N/A'}</span>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Lifecycle & Environment Block */}
+        {/* Circularity Metrics Column & Warranty Status */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+          {/* Circularity Metrics */}
           <div className="flex flex-col gap-6">
             <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
-              <Typography variant="h6" className="font-bold uppercase tracking-widest text-[#2E7D32] print:text-black text-xs">Lifecycle & Environment</Typography>
+              <Typography variant="h6" className="font-bold uppercase tracking-widest text-green-500 print:text-black text-xs">Circularity Specs</Typography>
             </div>
             <div className="grid grid-cols-2 gap-y-4 gap-x-4">
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Current Stage</span>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Lifecycle Stage</span>
                 <div className="flex items-center gap-1.5 text-[#1F2937] dark:text-white print:text-black">
                   <Activity size={14} className="text-blue-500 print:text-black" />
                   <span className="font-semibold">{object.lifecycleStage}</span>
                 </div>
               </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Asset Condition</span>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Physical Condition</span>
                 <span className="font-semibold text-[#1F2937] dark:text-white print:text-black">{object.condition}</span>
               </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Carbon Assessment</span>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Carbon Index</span>
                 <div className="flex items-center gap-1.5 text-[#1F2937] dark:text-white print:text-black">
                   <Leaf size={14} className="text-green-500 print:text-black" />
                   <span className="font-semibold">{object.carbonScore} Score</span>
                 </div>
               </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Circularity / Repairs</span>
-                <span className="font-semibold text-[#1F2937] dark:text-white print:text-black">{object.repairCount} Registered Events</span>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Repairs Documented</span>
+                <span className="font-semibold text-[#1F2937] dark:text-white print:text-black">{object.repairCount} Events</span>
               </div>
             </div>
           </div>
 
-          {/* Registration Block */}
-          <div className="flex flex-col gap-6 md:col-span-2 mt-4">
+          {/* Warranty calculations */}
+          <div className="flex flex-col gap-6">
             <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
-              <Typography variant="h6" className="font-bold uppercase tracking-widest text-gray-400 print:text-black text-xs">Genesis Record</Typography>
+              <Typography variant="h6" className="font-bold uppercase tracking-widest text-orange-500 print:text-black text-xs">Warranty Protection</Typography>
             </div>
-            <div className="grid grid-cols-2 gap-4 bg-gray-50 dark:bg-white/5 p-6 rounded-2xl print:bg-transparent print:border print:border-gray-300">
+            <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-xl flex items-center justify-between border border-gray-100 dark:border-white/10 print:bg-transparent print:border print:border-gray-300">
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Minted Date</span>
-                <span className="font-mono text-sm text-[#1F2937] dark:text-white print:text-black">{new Date(object.createdAt).toISOString()}</span>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cryptographic Hash (Simulated)</span>
-                <span className="font-mono text-xs text-gray-400 break-all leading-tight">
-                  0x{Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join('')}
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Expiry Threshold</span>
+                <span className="text-sm font-semibold text-[#1F2937] dark:text-white print:text-black">
+                  {object.warrantyExpiry ? new Date(object.warrantyExpiry).toLocaleDateString() : 'N/A'}
                 </span>
               </div>
+              <span className={`px-2.5 py-1 rounded text-xs font-bold ${warrantyStatus.color}`}>
+                {warrantyStatus.label}
+              </span>
             </div>
           </div>
+        </div>
 
+        {/* Beautiful Lifecycle Timeline UI */}
+        <div className="flex flex-col gap-6 mb-12">
+          <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
+            <Typography variant="h6" className="font-bold uppercase tracking-widest text-gray-400 print:text-black text-xs">Product Lifecycle Timeline</Typography>
+          </div>
+          
+          <div className="relative pl-8 border-l border-gray-100 dark:border-white/10 flex flex-col gap-8 py-2 print:border-gray-300">
+            {timelineEvents.map((evt) => {
+              const Icon = evt.icon;
+              return (
+                <div key={evt.id} className="relative flex flex-col gap-1 select-none">
+                  {/* Timeline Dot Node */}
+                  <span className={`absolute -left-[45px] top-0.5 h-8 w-8 rounded-full border-2 bg-white dark:bg-[#0B1220] flex items-center justify-center print:bg-white print:border-gray-400 ${evt.active ? evt.color : 'border-gray-100 dark:border-white/10 text-gray-300 dark:text-white/20 print:text-gray-400'}`}>
+                    <Icon size={14} />
+                  </span>
+                  
+                  <Typography variant="body" className={`font-semibold ${evt.active ? 'text-[#1F2937] dark:text-white print:text-black' : 'text-gray-400 dark:text-white/40 print:text-gray-400'}`}>
+                    {evt.title}
+                  </Typography>
+                  <Typography variant="small" className={`text-xs ${evt.active ? 'text-gray-500 dark:text-slate-400 print:text-gray-700' : 'text-gray-300 dark:text-slate-600 print:text-gray-400'}`}>
+                    {evt.description}
+                  </Typography>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Registration Block */}
+        <div className="flex flex-col gap-6 md:col-span-2 mt-4">
+          <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
+            <Typography variant="h6" className="font-bold uppercase tracking-widest text-gray-400 print:text-black text-xs">Genesis Record</Typography>
+          </div>
+          <div className="grid grid-cols-2 gap-4 bg-gray-50 dark:bg-white/5 p-6 rounded-2xl print:bg-transparent print:border print:border-gray-300">
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Minted Date</span>
+              <span className="font-mono text-sm text-[#1F2937] dark:text-white print:text-black">{new Date(object.createdAt).toISOString()}</span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cryptographic Hash (Simulated)</span>
+              <span className="font-mono text-xs text-gray-400 break-all leading-tight">
+                0x{Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join('')}
+              </span>
+            </div>
+          </div>
         </div>
 
       </div>
 
-      {/* Global Print Styles (Tailwind 'print:' variants handle most, but overriding some body margins helps) */}
+      {/* Global Print Styles */}
       <style dangerouslySetInnerHTML={{__html: `
         @media print {
           body {
@@ -224,3 +375,4 @@ export const DigitalPassport: React.FC = () => {
     </div>
   );
 };
+export default DigitalPassport;

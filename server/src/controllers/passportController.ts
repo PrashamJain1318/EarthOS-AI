@@ -18,7 +18,7 @@ export const passportController = {
       }
 
       const obj = await ObjectModel.findOne({ passportId })
-        .select('objectId passportId objectName category subCategory brand model serialNumber condition quantity lifecycleStage carbonScore aiScore images createdAt updatedAt')
+        .select('objectId passportId objectName category subCategory brand model serialNumber condition quantity lifecycleStage carbonScore aiScore images purchaseDate warrantyExpiry donationStatus marketplaceStatus repairCount createdAt updatedAt')
         .lean();
 
       if (!obj) {
