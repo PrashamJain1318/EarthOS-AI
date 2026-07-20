@@ -36,6 +36,7 @@ import { Wallet } from './pages/Wallet';
 import { Settings } from './pages/Settings';
 import { Analytics } from './pages/Analytics';
 import { PublicPassport } from './pages/PublicPassport';
+import { AdminLogin } from './pages/AdminLogin';
 
 // Route Protection
 import { PrivateRoute, GuestRoute, RoleRoute, AppRedirect } from './components/RouteProtection';
@@ -68,8 +69,8 @@ function App() {
 
           {/* Guest Only Auth Flow */}
           <Route element={<GuestRoute />}>
+            <Route path="/login" element={<Login />} />
             <Route path="/" element={<AuthLayout />}>
-              <Route path="login" element={<Login />} />
               <Route path="signup" element={<Signup />} />
               <Route path="forgot-password" element={<ForgotPassword />} />
               <Route path="reset-password" element={<ResetPassword />} />
@@ -78,6 +79,7 @@ function App() {
           </Route>
 
           <Route path="/invalid-role" element={<InvalidRole />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
 
           <Route path="/portal">
             <Route index element={<AppRedirect />} />
