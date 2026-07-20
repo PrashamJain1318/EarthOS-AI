@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Typography, EosBadge, EosButton } from '@earthos/ui';
+import { Typography, EosBadge } from '@earthos/ui';
 import { 
   User as UserIcon, 
   Heart, 
@@ -14,7 +14,10 @@ import {
   Mail,
   KeyRound,
   Chrome,
-  AlertCircle
+  AlertCircle,
+  ShieldAlert,
+  ChevronRight,
+  X
 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { UserRole } from '@earthos/types';
@@ -112,19 +115,31 @@ const PORTALS: PortalSpec[] = [
     subtitle: '🏛️ Regional circular economy registry',
     icon: Globe,
     desc: 'Audit municipal recycling indexes, manage circular grant allocation programs, and enforce material regulatory compliance.',
-    colorClass: 'text-amber-400 border-amber-500/30', // Gold/Amber accent
+    colorClass: 'text-amber-400 border-amber-500/30',
     activeBg: 'bg-amber-500/5',
-    btnClass: 'bg-[#D4AF37] hover:bg-[#C59B27] text-[#0B1220] focus:ring-amber-400', // Gold button styling
+    btnClass: 'bg-[#D4AF37] hover:bg-[#C59B27] text-[#0B1220] focus:ring-amber-400',
     focusRing: 'focus:border-amber-500 focus:ring-amber-500/20',
     accentText: 'text-amber-400'
   }
 ];
 
+const PORTAL_TITLE_MAP: Record<UserRole, string> = {
+  USER: 'User Portal',
+  NGO: 'NGO Portal',
+  REPAIR_PARTNER: 'Repair Partner Portal',
+  RECYCLER: 'Recycler Portal',
+  SELLER: 'Marketplace Seller Portal',
+  ENTERPRISE: 'Enterprise Portal',
+  GOVERNMENT: 'Government Portal',
+  ADMIN: 'Administrator Control Console',
+  SUPER_ADMIN: 'Super Administrator Console'
+};
+
 export const Login: React.FC = () => {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
 
-  // Persistence: Retrieve the selected portal during the session (Sprint 10.8.2)
+  // Persistence (Sprint 10.8.2)
   const initialRole = (sessionStorage.getItem('earthos_selected_portal') as UserRole) || 'USER';
   const initialIdx = PORTALS.findIndex((p) => p.role === initialRole);
   
@@ -135,39 +150,86 @@ export const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Mismatch Gateway Modal State (Sprint 10.8.4)
+  const [mismatchData, setMismatchData] = useState<{
+    correctRole: UserRole;
+    correctPortalTitle: string;
+    user: any;
+    token: string;
+  } | null>(null);
+
   const selectedPortal = PORTALS[selectedIdx];
 
-  // Save selected portal to session storage on change
   useEffect(() => {
     sessionStorage.setItem('earthos_selected_portal', selectedPortal.role);
   }, [selectedPortal]);
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMsg(null);
+    setMismatchData(null);
 
-    // Simulate mock authentication verification
-    setTimeout(() => {
-      const role = selectedPortal.role;
-      login(
-        {
-          id: `mock_${role.toLowerCase()}_123`,
-          name: `${selectedPortal.title} Agent`,
-          email: email || `${role.toLowerCase()}@earthos.ai`,
-          role: role
+    try {
+      // Connect Authentication: Hit the real backend (Sprint 10.8.4)
+      const response = await fetch('http://localhost:8000/api/v1/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
         },
-        'mock_jwt_access_token'
-      );
-      
-      const destination = roleRoutes[role];
+        body: JSON.stringify({ email, password })
+      });
+
+      const resData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(resData.error?.message || 'Access credentials rejected.');
+      }
+
+      const { accessToken, user } = resData.data;
+      const userRole = user.role as UserRole;
+
+      // Check if selected portal matches user role (Sprint 10.8.4)
+      if (selectedPortal.role !== userRole) {
+        // Trigger Mismatch warnings
+        setMismatchData({
+          correctRole: userRole,
+          correctPortalTitle: PORTAL_TITLE_MAP[userRole] || 'Registered Workspace',
+          user,
+          token: accessToken
+        });
+        return;
+      }
+
+      // Success matching path: Redirect user
+      login(user, accessToken);
+      const destination = roleRoutes[userRole];
       if (destination) {
         navigate(destination);
       } else {
         navigate('/invalid-role');
       }
+
+    } catch (err) {
+      console.error(err);
+      setErrorMsg(err instanceof Error ? err.message : 'Authentication failed.');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
+  };
+
+  const handleProceedToCorrectPortal = () => {
+    if (!mismatchData) return;
+    
+    login(mismatchData.user, mismatchData.token);
+    const destination = roleRoutes[mismatchData.correctRole];
+    
+    setMismatchData(null);
+    if (destination) {
+      navigate(destination);
+    } else {
+      navigate('/invalid-role');
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
@@ -180,9 +242,9 @@ export const Login: React.FC = () => {
   const IconComponent = selectedPortal.icon;
 
   return (
-    <div className="min-h-screen w-screen flex flex-col lg:flex-row bg-[#0B1220] text-white font-sans overflow-y-auto lg:overflow-hidden select-none">
+    <div className="min-h-screen w-screen flex flex-col lg:flex-row bg-[#0B1220] text-white font-sans overflow-y-auto lg:overflow-hidden select-none relative">
       
-      {/* LEFT SIDE: PORTAL SELECTION CARD LIST (Sprint 10.8.2) */}
+      {/* LEFT SIDE: PORTAL SELECTION CARD LIST */}
       <div className="w-full lg:w-1/2 p-6 md:p-12 flex flex-col justify-between lg:h-screen lg:overflow-y-auto border-b lg:border-b-0 lg:border-r border-white/5">
         
         {/* Brand Header */}
@@ -250,14 +312,16 @@ export const Login: React.FC = () => {
         {/* Footer */}
         <div className="pt-6 max-w-xl w-full mx-auto lg:mx-0 flex justify-between items-center text-xs text-slate-500 font-semibold">
           <span>Nothing useful should ever become waste.</span>
-          <span>OS 2.0</span>
+          <button onClick={() => navigate('/admin/login')} className="hover:underline hover:text-slate-300">
+            System Console
+          </button>
         </div>
 
       </div>
 
-      {/* RIGHT SIDE: DYNAMIC LOGIN PANEL (Sprint 10.8.3) */}
+      {/* RIGHT SIDE: DYNAMIC LOGIN PANEL */}
       <div className="w-full lg:w-1/2 p-6 md:p-12 flex flex-col justify-center items-center relative overflow-hidden bg-[#0F172A] lg:h-screen lg:overflow-y-auto">
-        {/* Radial glow backdrops mapping dynamic accent colors */}
+        {/* Background Glow (Sprint 10.8.6) */}
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-radial from-[#00BCD4]/5 to-transparent rounded-full filter blur-3xl pointer-events-none" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-radial from-[#2E7D32]/5 to-transparent rounded-full filter blur-3xl pointer-events-none" />
 
@@ -271,7 +335,7 @@ export const Login: React.FC = () => {
               transition={{ duration: 0.25 }}
               className="bg-[#0B1220] border border-white/10 p-8 md:p-10 rounded-[2.5rem] shadow-2xl relative w-full text-left"
             >
-              {/* Dynamic Header Badge & Details */}
+              {/* Dynamic Header Badge & Welcome Message (Sprint 10.8.6) */}
               <div className="flex flex-col gap-4 mb-8">
                 <div className="flex items-center gap-3">
                   <span className={`h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center ${selectedPortal.colorClass}`}>
@@ -357,7 +421,7 @@ export const Login: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Dynamic Login Action Button */}
+                {/* Dynamic Login Action Button Theme (Sprint 10.8.6) */}
                 <button
                   type="submit"
                   disabled={isLoading}
@@ -394,6 +458,62 @@ export const Login: React.FC = () => {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* PORTAL MISMATCH MODAL GATE (Sprint 10.8.4) */}
+      <AnimatePresence>
+        {mismatchData && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#121622] border-2 border-red-500/20 max-w-md w-full rounded-[2.5rem] p-8 shadow-2xl relative text-left"
+            >
+              <button 
+                onClick={() => setMismatchData(null)}
+                className="absolute top-6 right-6 text-slate-400 hover:text-white"
+              >
+                <X size={18} />
+              </button>
+
+              <div className="flex items-center gap-3 text-red-500 mb-4">
+                <span className="h-10 w-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
+                  <ShieldAlert size={20} />
+                </span>
+                <Typography variant="h4" className="font-bold text-white leading-tight">
+                  Portal Role Mismatch
+                </Typography>
+              </div>
+
+              <div className="my-6">
+                <p className="text-sm text-slate-300 leading-relaxed">
+                  You are attempting to access the <strong className="text-white font-semibold">{selectedPortal.title}</strong>. However, this account is registered under administrative clearances for the:
+                </p>
+                <div className="bg-black/25 border border-white/5 p-4 rounded-xl flex items-center justify-between gap-3 mt-4">
+                  <span className="text-sm font-semibold text-[#00BCD4]">{mismatchData.correctPortalTitle}</span>
+                  <EosBadge variant="info" className="text-[9px] uppercase font-bold tracking-wider px-2 py-0.5">Correct Gateway</EosBadge>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2">
+                <button
+                  onClick={handleProceedToCorrectPortal}
+                  className="w-full flex items-center justify-between px-5 py-3 rounded-xl bg-[#00BCD4] hover:bg-[#0097A7] text-black font-bold text-sm"
+                >
+                  <span>Continue to Correct Portal</span>
+                  <ChevronRight size={16} />
+                </button>
+                <button
+                  onClick={() => setMismatchData(null)}
+                  className="w-full py-3 rounded-xl border border-white/10 hover:bg-white/5 text-slate-400 hover:text-white font-semibold text-sm transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
     </div>
   );
