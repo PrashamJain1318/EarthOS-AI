@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Typography, EosCard, EosButton } from '@earthos/ui';
 import { Camera, UploadCloud, X, Loader2, Maximize, Scan, RefreshCcw, QrCode, FileText, Cpu } from 'lucide-react';
 import { barcodeService } from '../features/ai-scanner/services/barcodeService';
@@ -7,6 +8,7 @@ import { aiRegistry } from '../features/ai-scanner/services/aiProviderRegistry';
 import { ObjectRecognitionResult } from '../features/ai-scanner/types/ai';
 
 export const Scanner: React.FC = () => {
+  const navigate = useNavigate();
   const [activeMode, setActiveMode] = useState<'idle' | 'upload' | 'camera'>('idle');
   const [isScanning, setIsScanning] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -173,6 +175,32 @@ export const Scanner: React.FC = () => {
       // Logic for displaying mock AI results goes here in the future
       alert('Mock scan completed. Compressed image is ready for upload. AI results will be rendered here.');
     }, 2500);
+  };
+
+  const mapCondition = (cond: string | undefined): string => {
+    if (!cond) return 'GOOD';
+    const c = cond.toUpperCase();
+    if (c === 'NEW') return 'NEW';
+    if (c === 'GOOD') return 'GOOD';
+    if (c === 'FAIR') return 'FAIR';
+    if (c === 'POOR') return 'POOR';
+    return 'GOOD';
+  };
+
+  const handleRegister = () => {
+    const autofill = {
+      objectName: aiResult?.productType || ocrData?.structuredData.productName || 'Scanned Object',
+      category: aiResult?.category || ocrData?.structuredData.brand || 'Electronics',
+      brand: ocrData?.structuredData.brand || 'Unknown',
+      model: ocrData?.structuredData.modelNumber || 'Unknown',
+      serialNumber: ocrData?.structuredData.serialNumber || '',
+      purchaseDate: ocrData?.structuredData.purchaseDate || new Date().toISOString().split('T')[0],
+      condition: mapCondition(aiResult?.condition),
+      currentValue: 500, // Estimated Value
+      description: aiResult ? `AI Visual Recognition Category: ${aiResult.category}. Damage detected: ${aiResult.damageDetected.join(', ') || 'None'}.` : 'Scanned via AI Scanner.',
+      warrantyExpiry: ocrData?.structuredData.warrantyDate || '',
+    };
+    navigate('/portal/user/objects/new', { state: { autofill } });
   };
 
   return (
@@ -347,9 +375,14 @@ export const Scanner: React.FC = () => {
                         </div>
                       )}
 
-                      <EosButton variant="primary" className="w-full mt-2" onClick={() => setActiveMode('idle')}>
-                        Done
-                      </EosButton>
+                      <div className="flex gap-3 w-full mt-2">
+                        <EosButton variant="secondary" className="flex-1" onClick={() => setActiveMode('idle')}>
+                          Cancel
+                        </EosButton>
+                        <EosButton variant="primary" className="flex-1" onClick={handleRegister}>
+                          Register Object
+                        </EosButton>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -485,6 +518,17 @@ export const Scanner: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              {/* Action Buttons for Upload Result Page */}
+              <div className="flex gap-4 pt-6 border-t border-[#B0BEC5]/30 w-full justify-end">
+                <EosButton variant="secondary" onClick={() => { setOcrData(null); setAiResult(null); setActiveMode('idle'); }}>
+                  Cancel
+                </EosButton>
+                <EosButton variant="primary" onClick={handleRegister}>
+                  Register Object
+                </EosButton>
+              </div>
+
             </div>
           </div>
         )}
