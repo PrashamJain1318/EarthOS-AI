@@ -73,6 +73,13 @@ export const createObjectSchema = z.object({
   barcode:          z.string().trim().optional(),
   currentOwner:     z.string().trim().optional(),
   previousOwners:    z.array(z.string().trim()).optional(),
+  passportDocuments: z.array(z.object({
+    name: z.string().trim(),
+    type: z.enum(['INVOICE', 'WARRANTY', 'MANUAL', 'CERTIFICATE', 'RECEIPT', 'OTHER']),
+    url: z.string().trim(),
+    uploadedAt: z.any().optional()
+  })).optional(),
+  passportInsights: z.array(z.string().trim()).optional(),
   scanMetadata:     z.object({
     ocrResults:     z.any().optional(),
     aiSuggestions:  z.any().optional(),

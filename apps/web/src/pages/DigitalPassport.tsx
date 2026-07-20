@@ -19,6 +19,8 @@ import {
   History,
   TrendingDown,
   ArrowRight,
+  Brain,
+  Download,
   FileText
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
@@ -191,10 +193,10 @@ export const DigitalPassport: React.FC = () => {
         
         {/* Passport Header */}
         <div className="flex flex-col md:flex-row justify-between items-start gap-8 border-b-2 border-gray-100 dark:border-white/10 pb-8 mb-8 print:border-gray-300">
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 text-left">
             <div className="flex items-center gap-2 text-[#2E7D32] print:text-black">
               <Globe size={24} />
-              <Typography variant="h5" className="font-bold tracking-widest uppercase">EARTHOS Registry</Typography>
+              <Typography variant="h5" className="font-bold tracking-widest uppercase text-left">EARTHOS Registry</Typography>
             </div>
             <div>
               <Typography variant="h2" className="font-bold font-display tracking-tight text-[#1F2937] dark:text-white print:text-black leading-tight mb-2">
@@ -235,9 +237,9 @@ export const DigitalPassport: React.FC = () => {
           </div>
 
           {/* Product Specifications */}
-          <div className="md:col-span-2 flex flex-col gap-6">
+          <div className="md:col-span-2 flex flex-col gap-6 text-left">
             <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
-              <Typography variant="h6" className="font-bold uppercase tracking-widest text-[#00BCD4] print:text-black text-xs">Specifications</Typography>
+              <Typography variant="h6" className="font-bold uppercase tracking-widest text-[#00BCD4] print:text-black text-xs text-left">Specifications</Typography>
             </div>
             <div className="grid grid-cols-2 gap-y-4 gap-x-4">
               <div className="flex flex-col gap-0.5">
@@ -267,9 +269,9 @@ export const DigitalPassport: React.FC = () => {
         {/* Circularity Metrics Column & Warranty Status */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
           {/* Circularity Metrics */}
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6 text-left">
             <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
-              <Typography variant="h6" className="font-bold uppercase tracking-widest text-green-500 print:text-black text-xs">Circularity Specs</Typography>
+              <Typography variant="h6" className="font-bold uppercase tracking-widest text-green-500 print:text-black text-xs text-left">Circularity Specs</Typography>
             </div>
             <div className="grid grid-cols-2 gap-y-4 gap-x-4">
               <div className="flex flex-col gap-0.5">
@@ -298,9 +300,9 @@ export const DigitalPassport: React.FC = () => {
           </div>
 
           {/* Warranty calculations */}
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6 text-left">
             <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
-              <Typography variant="h6" className="font-bold uppercase tracking-widest text-orange-500 print:text-black text-xs">Warranty Protection</Typography>
+              <Typography variant="h6" className="font-bold uppercase tracking-widest text-orange-500 print:text-black text-xs text-left">Warranty Protection</Typography>
             </div>
             <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-xl flex items-center justify-between border border-gray-100 dark:border-white/10 print:bg-transparent print:border print:border-gray-300">
               <div className="flex flex-col gap-1">
@@ -316,9 +318,33 @@ export const DigitalPassport: React.FC = () => {
           </div>
         </div>
 
+        {/* AI INSIGHTS PANEL (Sprint 12.11) */}
+        {object.passportInsights && object.passportInsights.length > 0 && (
+          <div className="flex flex-col gap-6 mb-12">
+            <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
+              <Brain size={16} className="text-green-500 print:text-black" />
+              <Typography variant="h6" className="font-bold uppercase tracking-widest text-green-500 print:text-black text-xs text-left">AI Circular Insights</Typography>
+            </div>
+            
+            <div className="bg-green-500/5 dark:bg-green-500/5 border-2 border-green-500/20 dark:border-green-500/20 rounded-2xl p-6 relative overflow-hidden flex flex-col gap-4 print:bg-transparent print:border print:border-gray-300">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-green-500/10 to-transparent rounded-bl-full pointer-events-none print:hidden" />
+              <div className="flex flex-col gap-2">
+                {object.passportInsights.map((insight: string, idx: number) => (
+                  <div key={idx} className="flex gap-2.5 items-start text-sm">
+                    <span className="h-5 w-5 rounded-full bg-green-500/10 dark:bg-green-500/10 flex items-center justify-center text-green-500 dark:text-green-400 print:text-black mt-0.5 shrink-0 text-xs font-bold">
+                      {idx + 1}
+                    </span>
+                    <p className="text-[#1F2937] dark:text-slate-300 print:text-black leading-relaxed text-left">{insight}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-          {/* LEFT: Ownership Custody Chain (Sprint 12.8) */}
-          <div className="flex flex-col gap-6">
+          {/* LEFT: Ownership Custody Chain */}
+          <div className="flex flex-col gap-6 text-left">
             <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
               <History size={16} className="text-blue-400" />
               <Typography variant="h6" className="font-bold uppercase tracking-widest text-blue-400 text-xs text-left">Ownership Custody Chain</Typography>
@@ -371,8 +397,8 @@ export const DigitalPassport: React.FC = () => {
             </div>
           </div>
 
-          {/* RIGHT: Carbon Ledger Balance (Sprint 12.9) */}
-          <div className="flex flex-col gap-6">
+          {/* RIGHT: Carbon Ledger Balance */}
+          <div className="flex flex-col gap-6 text-left">
             <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
               <TrendingDown size={16} className="text-emerald-400" />
               <Typography variant="h6" className="font-bold uppercase tracking-widest text-emerald-400 text-xs text-left">Carbon Balance Ledger</Typography>
@@ -405,7 +431,44 @@ export const DigitalPassport: React.FC = () => {
           </div>
         </div>
 
-        {/* Repair Cards list (Sprint 12.7) */}
+        {/* UPLOADED DOCUMENTS LIST (Sprint 12.10) */}
+        <div className="flex flex-col gap-6 mb-12">
+          <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
+            <FileText size={16} className="text-cyan-400" />
+            <Typography variant="h6" className="font-bold uppercase tracking-widest text-cyan-400 text-xs text-left">Registry Documents & Certifications</Typography>
+          </div>
+          
+          {object.passportDocuments && object.passportDocuments.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {object.passportDocuments.map((doc: any, index: number) => (
+                <div key={index} className="bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-2xl p-4 flex items-center justify-between gap-4 print:bg-transparent print:border print:border-gray-300">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 rounded-xl shrink-0 print:border-gray-300 print:text-black">
+                      <FileText size={18} />
+                    </div>
+                    <div className="text-left font-sans">
+                      <Typography variant="body" className="font-semibold text-[#1F2937] dark:text-white print:text-black text-sm truncate max-w-[200px]">
+                        {doc.name}
+                      </Typography>
+                      <span className="text-[10px] text-cyan-400 print:text-black font-bold uppercase tracking-wider">
+                        {doc.type}
+                      </span>
+                    </div>
+                  </div>
+                  <EosButton variant="outline" size="sm" className="border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/5 text-[#1F2937] dark:text-white print:hidden" onClick={() => alert(`Downloading registry file: ${doc.name}`)}>
+                    <Download size={14} />
+                  </EosButton>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 p-8 rounded-2xl text-gray-400 dark:text-slate-500 text-sm print:border-gray-300">
+              No circular documents have been registered under this asset passport yet.
+            </div>
+          )}
+        </div>
+
+        {/* Repair Cards list */}
         <div className="flex flex-col gap-6 mb-12">
           <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
             <Hammer size={16} className="text-orange-400" />
@@ -452,7 +515,7 @@ export const DigitalPassport: React.FC = () => {
         {/* Beautiful Lifecycle Timeline UI */}
         <div className="flex flex-col gap-6 mb-12">
           <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
-            <Typography variant="h6" className="font-bold uppercase tracking-widest text-gray-400 print:text-black text-xs">Product Lifecycle Timeline</Typography>
+            <Typography variant="h6" className="font-bold uppercase tracking-widest text-gray-400 print:text-black text-xs text-left">Product Lifecycle Timeline</Typography>
           </div>
           
           <div className="relative pl-8 border-l border-gray-100 dark:border-white/10 flex flex-col gap-8 py-2 print:border-gray-300">
@@ -480,7 +543,7 @@ export const DigitalPassport: React.FC = () => {
         {/* Registration Block */}
         <div className="flex flex-col gap-6 md:col-span-2 mt-4 text-left">
           <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-white/10 print:border-gray-300">
-            <Typography variant="h6" className="font-bold uppercase tracking-widest text-gray-400 print:text-black text-xs">Genesis Record</Typography>
+            <Typography variant="h6" className="font-bold uppercase tracking-widest text-gray-400 print:text-black text-xs text-left">Genesis Record</Typography>
           </div>
           <div className="grid grid-cols-2 gap-4 bg-gray-50 dark:bg-white/5 p-6 rounded-2xl print:bg-transparent print:border print:border-gray-300">
             <div className="flex flex-col gap-1">

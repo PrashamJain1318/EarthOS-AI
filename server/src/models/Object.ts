@@ -83,6 +83,13 @@ export interface IObject extends Omit<Document, 'model'> {
     carbonEstimate?: any;
     originalImage?: string;
   };
+  passportDocuments?: {
+    name: string;
+    type: 'INVOICE' | 'WARRANTY' | 'MANUAL' | 'CERTIFICATE' | 'RECEIPT' | 'OTHER';
+    url: string;
+    uploadedAt?: Date;
+  }[];
+  passportInsights?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -289,6 +296,19 @@ const ObjectSchema = new Schema<IObject>({
   previousOwners: {
     type: [String],
     default: ['Primary Retailer Store', 'Genesis Production Facility']
+  },
+  passportDocuments: {
+    type: [{
+      name: { type: String, required: true },
+      type: { type: String, enum: ['INVOICE', 'WARRANTY', 'MANUAL', 'CERTIFICATE', 'RECEIPT', 'OTHER'], required: true },
+      url: { type: String, required: true },
+      uploadedAt: { type: Date, default: Date.now }
+    }],
+    default: []
+  },
+  passportInsights: {
+    type: [String],
+    default: []
   }
 }, {
   timestamps: true
@@ -332,6 +352,34 @@ ObjectSchema.pre<IObject>('save', async function (next) {
   this.currentOwner = this.currentOwner || 'EarthOS Registered User';
   if (!this.previousOwners || this.previousOwners.length === 0) {
     this.previousOwners = ['Primary Retailer Store', 'Genesis Production Facility'];
+  }
+  if (!this.passportDocuments || this.passportDocuments.length === 0) {
+    this.passportDocuments = [
+      { name: 'Purchase_Invoice.pdf', type: 'INVOICE', url: '#' },
+      { name: 'Manufacturer_Warranty_Card.pdf', type: 'WARRANTY', url: '#' },
+      { name: 'User_Operations_Manual.pdf', type: 'MANUAL', url: '#' },
+      { name: 'Material_Circularity_Certificate.pdf', type: 'CERTIFICATE', url: '#' }
+    ];
+  }
+  if (!this.passportInsights || this.passportInsights.length === 0) {
+    const isTech = ['ELECTRONICS', 'COMPUTERS', 'PHONES', 'TABLETS', 'LAPTOPS'].includes(this.category?.toUpperCase() || '') ||
+                   this.objectName?.toLowerCase().includes('laptop') || 
+                   this.objectName?.toLowerCase().includes('phone') ||
+                   this.objectName?.toLowerCase().includes('computer');
+    if (isTech) {
+      this.passportInsights = [
+        'AI suggestion: Service this hardware within 6 months.',
+        'AI metrics: Replace battery to restore peak energy efficiency.',
+        'AI market tip: Sell after 8 months to retain maximum resale value.',
+        'AI environmental tip: Donate instead of recycling to maximize lifecycle extension.'
+      ];
+    } else {
+      this.passportInsights = [
+        'AI suggestion: Perform preventative cleaning every quarter.',
+        'AI environmental tip: Consider donating to a local charity instead of disposing.',
+        'AI circularity tip: Repairing represents a significant carbon offset.'
+      ];
+    }
   }
   next();
 });

@@ -18,7 +18,9 @@ import {
   User,
   History,
   TrendingDown,
-  ArrowRight
+  ArrowRight,
+  Brain,
+  Download
 } from 'lucide-react';
 
 export const PublicPassport: React.FC = () => {
@@ -108,8 +110,7 @@ export const PublicPassport: React.FC = () => {
   const warrantyStatus = getWarrantyStatus(object.warrantyExpiry);
 
   // Carbon Timeline Benefit calculations
-  // Fallback calculations if scanMetadata carbonEstimate is missing
-  const carbonFootprint = object.scanMetadata?.carbonEstimate?.footprint || 120; // in kg CO2e
+  const carbonFootprint = object.scanMetadata?.carbonEstimate?.footprint || 120;
   const repairBenefit = object.scanMetadata?.carbonEstimate?.repairBenefit || Math.round(carbonFootprint * 0.75);
   const reuseBenefit = object.scanMetadata?.carbonEstimate?.reuseBenefit || Math.round(carbonFootprint * 0.90);
   const carbonSaved = repairBenefit + reuseBenefit;
@@ -311,8 +312,33 @@ export const PublicPassport: React.FC = () => {
           </div>
         </div>
 
+        {/* AI INSIGHTS PANEL (Sprint 12.11) */}
+        {object.passportInsights && object.passportInsights.length > 0 && (
+          <div className="flex flex-col gap-6 mb-12">
+            <div className="flex items-center gap-2 pb-2 border-b border-white/5">
+              <Brain size={16} className="text-green-400" />
+              <Typography variant="h6" className="font-bold uppercase tracking-widest text-green-400 text-xs">AI circular Insights</Typography>
+            </div>
+            
+            <div className="bg-green-500/5 border-2 border-green-500/20 rounded-2xl p-6 relative overflow-hidden flex flex-col gap-4">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-green-500/10 to-transparent rounded-bl-full pointer-events-none" />
+              <div className="flex flex-col gap-2">
+                {object.passportInsights.map((insight: string, idx: number) => (
+                  <div key={idx} className="flex gap-2.5 items-start text-sm">
+                    <span className="h-5 w-5 rounded-full bg-green-500/10 flex items-center justify-center text-green-400 mt-0.5 shrink-0 text-xs font-bold">
+                      {idx + 1}
+                    </span>
+                    <p className="text-slate-300 leading-relaxed text-left">{insight}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Custody Chain & Carbon Balance Ledger */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-          {/* LEFT: Ownership Custody Chain (Sprint 12.8) */}
+          {/* LEFT: Ownership Custody Chain */}
           <div className="flex flex-col gap-6">
             <div className="flex items-center gap-2 pb-2 border-b border-white/5">
               <History size={16} className="text-blue-400" />
@@ -366,7 +392,7 @@ export const PublicPassport: React.FC = () => {
             </div>
           </div>
 
-          {/* RIGHT: Carbon Ledger Balance (Sprint 12.9) */}
+          {/* RIGHT: Carbon Ledger Balance */}
           <div className="flex flex-col gap-6">
             <div className="flex items-center gap-2 pb-2 border-b border-white/5">
               <TrendingDown size={16} className="text-emerald-400" />
@@ -400,7 +426,44 @@ export const PublicPassport: React.FC = () => {
           </div>
         </div>
 
-        {/* Repair Cards list (Sprint 12.7) */}
+        {/* UPLOADED DOCUMENTS LIST (Sprint 12.10) */}
+        <div className="flex flex-col gap-6 mb-12">
+          <div className="flex items-center gap-2 pb-2 border-b border-white/5">
+            <FileText size={16} className="text-cyan-400" />
+            <Typography variant="h6" className="font-bold uppercase tracking-widest text-cyan-400 text-xs">Registry Documents & Certifications</Typography>
+          </div>
+          
+          {object.passportDocuments && object.passportDocuments.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {object.passportDocuments.map((doc: any, index: number) => (
+                <div key={index} className="bg-white/5 border border-white/5 rounded-2xl p-4 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 rounded-xl shrink-0">
+                      <FileText size={18} />
+                    </div>
+                    <div className="text-left">
+                      <Typography variant="body" className="font-semibold text-white text-sm truncate max-w-[200px]">
+                        {doc.name}
+                      </Typography>
+                      <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">
+                        {doc.type}
+                      </span>
+                    </div>
+                  </div>
+                  <EosButton variant="outline" size="sm" className="border-white/10 hover:bg-white/5 text-white" onClick={() => alert(`Downloading registry file: ${doc.name}`)}>
+                    <Download size={14} />
+                  </EosButton>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center bg-white/5 border border-white/5 p-8 rounded-2xl text-slate-500 text-sm">
+              No circular documents have been registered under this asset passport yet.
+            </div>
+          )}
+        </div>
+
+        {/* Repair Cards list */}
         <div className="flex flex-col gap-6 mb-12">
           <div className="flex items-center gap-2 pb-2 border-b border-white/5">
             <Hammer size={16} className="text-orange-400" />
