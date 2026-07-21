@@ -64,6 +64,28 @@ export const objectController = {
   },
 
   /**
+   * GET /api/v1/objects/all
+   * Unpaginated list for Analytics Dashboard
+   */
+  async getAllUnpaginated(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED', message: 'User session not found.' } });
+        return;
+      }
+
+      const objects = await objectService.getAllUnpaginated(userId);
+      res.status(200).json({
+        success: true,
+        data: objects
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
    * GET /api/v1/objects/search
    */
   async search(req: Request, res: Response, next: NextFunction): Promise<void> {

@@ -11,6 +11,8 @@ import objectRoutes from './routes/objects';
 import taxonomyRoutes from './routes/taxonomy';
 import scannerRoutes from './routes/scanner';
 import passportRoutes from './routes/passport';
+import uploadRoutes from './routes/upload';
+import path from 'path';
 
 const app = express();
 
@@ -24,8 +26,11 @@ app.use(cors({
 }));
 
 // Body parsing parser middlewares
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
 
 // Global IP Rate Limiter configuration
 const rateLimiter = rateLimit({
@@ -60,6 +65,7 @@ app.use('/api/v1/objects', objectRoutes);
 app.use('/api/v1/taxonomy', taxonomyRoutes);
 app.use('/api/v1/scanner', scannerRoutes);
 app.use('/api/v1/passports', passportRoutes);
+app.use('/api/v1/upload', uploadRoutes);
 
 // Global Error Interceptor middleware
 app.use(globalErrorHandler);

@@ -12,6 +12,16 @@ export const useObject = (id: string) => {
   });
 };
 
+export const useAllObjects = () => {
+  return useQuery({
+    queryKey: ['allObjects'],
+    queryFn: async () => {
+      const response = await objectService.getAllObjects();
+      return response.data;
+    },
+  });
+};
+
 export const useInfiniteObjects = (filters: ObjectFilters) => {
   return useInfiniteQuery({
     queryKey: ['objects', filters],
@@ -36,6 +46,12 @@ export const useCreateObject = () => {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['objects'] });
     },
+  });
+};
+
+export const useUploadImages = () => {
+  return useMutation({
+    mutationFn: (files: File[]) => objectService.uploadImages(files),
   });
 };
 

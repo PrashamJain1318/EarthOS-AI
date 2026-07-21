@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 export interface AdvancedFilters {
   name?: string;
@@ -34,23 +35,38 @@ interface ObjectState {
   resetFilters: () => void;
 }
 
-export const useObjectStore = create<ObjectState>((set) => ({
-  viewMode: 'grid',
-  searchQuery: '',
-  filters: {},
-  sortBy: 'createdAt',
-  sortOrder: 'desc',
-  
-  setViewMode: (mode) => set({ viewMode: mode }),
-  setSearchQuery: (query) => set({ searchQuery: query }),
-  setFilters: (newFilters) => set((state) => ({ filters: { ...state.filters, ...newFilters } })),
-  setSortBy: (sortBy) => set({ sortBy }),
-  setSortOrder: (order) => set({ sortOrder: order }),
-  
-  resetFilters: () => set({
-    searchQuery: '',
-    filters: {},
-    sortBy: 'createdAt',
-    sortOrder: 'desc',
-  }),
-}));
+export const useObjectStore = create<ObjectState>()(
+  persist(
+    (set) => ({
+      viewMode: 'grid',
+      searchQuery: '',
+      filters: {},
+      sortBy: 'createdAt',
+      sortOrder: 'desc',
+      
+      setViewMode: (mode) => set({ viewMode: mode }),
+      setSearchQuery: (query) => set({ searchQuery: query }),
+      setFilters: (newFilters) => set((state) => ({ filters: { ...state.filters, ...newFilters } })),
+      setSortBy: (sortBy) => set({ sortBy }),
+      setSortOrder: (order) => set({ sortOrder: order }),
+      
+      resetFilters: () => set({
+        searchQuery: '',
+        filters: {},
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      }),
+    }),
+    {
+      name: 'object-store',
+      // Only persist viewMode, sortBy, sortOrder, and filters.
+      partialize: (state) => ({
+        viewMode: state.viewMode,
+        filters: state.filters,
+        sortBy: state.sortBy,
+        sortOrder: state.sortOrder,
+        searchQuery: state.searchQuery
+      }),
+    }
+  )
+);

@@ -55,6 +55,7 @@ export const ObjectToolbar: React.FC = () => {
             className="bg-transparent text-sm border-none outline-none pl-2 pr-6 py-1.5 text-gray-700 dark:text-gray-300 appearance-none cursor-pointer"
           >
             <option value="createdAt">Recent</option>
+            <option value="updatedAt">Recently Updated</option>
             <option value="objectName">Name</option>
             <option value="purchasePrice">Price</option>
             <option value="currentValue">Value</option>
