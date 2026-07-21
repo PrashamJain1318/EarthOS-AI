@@ -276,7 +276,7 @@ export const DigitalPassport: React.FC = () => {
           {/* Image Box */}
           <div className="md:col-span-1 border border-gray-100 dark:border-white/10 rounded-2xl overflow-hidden aspect-square flex items-center justify-center bg-gray-50 dark:bg-black/35 print:border-gray-300">
             {object.images && object.images.length > 0 ? (
-              <img src={object.images[0]} alt={object.objectName} className="w-full h-full object-cover" />
+              <img src={object.images[0]} alt={object.objectName} loading="lazy" className="w-full h-full object-cover" />
             ) : (
               <FileText size={48} className="text-gray-300 dark:text-white/20" />
             )}

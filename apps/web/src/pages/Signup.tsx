@@ -25,6 +25,7 @@ export const Signup: React.FC = () => {
   const navigate = useNavigate();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const isSubmitting = React.useRef(false);
 
   const {
     register,
@@ -38,6 +39,8 @@ export const Signup: React.FC = () => {
   });
 
   const onSubmit = async (data: SignupFormValues) => {
+    if (isSubmitting.current) return;
+    isSubmitting.current = true;
     setIsLoading(true);
     setErrorMsg(null);
 
@@ -53,6 +56,7 @@ export const Signup: React.FC = () => {
       setErrorMsg(err.message || 'Failed to create account.');
     } finally {
       setIsLoading(false);
+      isSubmitting.current = false;
     }
   };
 

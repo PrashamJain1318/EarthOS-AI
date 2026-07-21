@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import compression from 'compression';
 import { env } from './config/env';
 import { logger } from './config/logger';
 import { connectDatabases } from './config/db';
@@ -22,6 +23,9 @@ app.use(cors({
   origin: '*', // Allow all client queries during initial foundation sprint
   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS']
 }));
+
+// Compression middleware
+app.use(compression());
 
 // Body parsing parser middlewares
 app.use(express.json({ limit: '50mb' }));
