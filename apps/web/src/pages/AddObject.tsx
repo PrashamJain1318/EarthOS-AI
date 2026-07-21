@@ -26,13 +26,22 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
-import { useCreateObject, useUploadImages } from '../hooks/useObjects';
+import { useCreateObject } from '../hooks/useObjects';
 import { SmartTagInput } from '../components/ui/SmartTagInput';
 import { CategoryAutocomplete } from '../components/ui/CategoryAutocomplete';
 
 const CONDITIONS = [
   'NEW', 'LIKE_NEW', 'GOOD', 'FAIR', 'POOR', 'DAMAGED', 'NON_FUNCTIONAL'
 ] as const;
+
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
+};
 
 // ─── Client Validation Schema ────────────────────────────
 
@@ -80,7 +89,6 @@ export const AddObject: React.FC = () => {
   
   const accessToken = useAuthStore((state) => state.accessToken);
   const { mutateAsync: createObject } = useCreateObject();
-  const { mutateAsync: uploadImages } = useUploadImages();
   
   const [toast, setToast] = useState<ToastState | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -162,17 +170,11 @@ export const AddObject: React.FC = () => {
     setIsSubmitting(true);
     setApiError(null);
 
-    // Upload Images to Server
-    const validImages = images.filter(img => img.progress === 100 && img.file);
-    let uploadedUrls: string[] = [];
-
-    if (validImages.length > 0) {
-      const filesToUpload = validImages.map(img => img.file);
-      const uploadRes = await uploadImages(filesToUpload);
-      if (uploadRes.success) {
-        uploadedUrls = uploadRes.data;
-      }
-    }
+    // Convert images to Base64
+    const validImages = images.filter(img => img.progress === 100);
+    const uploadedUrls = await Promise.all(
+      validImages.map(img => fileToBase64(img.file))
+    );
 
     // Fallback default image if none uploaded
     const finalImages = uploadedUrls.length > 0 ? uploadedUrls : [

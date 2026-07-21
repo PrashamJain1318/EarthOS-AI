@@ -49,12 +49,6 @@ export const useCreateObject = () => {
   });
 };
 
-export const useUploadImages = () => {
-  return useMutation({
-    mutationFn: (files: File[]) => objectService.uploadImages(files),
-  });
-};
-
 export const useUpdateObject = () => {
   const queryClient = useQueryClient();
 

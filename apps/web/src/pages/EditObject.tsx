@@ -24,7 +24,7 @@ import {
   AlertCircle,
   ShieldCheck
 } from 'lucide-react';
-import { useObject, useUpdateObject, useDeleteObject, useUploadImages } from '../hooks/useObjects';
+import { useObject, useUpdateObject, useDeleteObject } from '../hooks/useObjects';
 import { ObjectItem } from '../services/objectService';
 import { DeleteConfirmationModal } from '../components/objects/DeleteConfirmationModal';
 import { ObjectDetailsSkeleton } from '../components/objects/details/ObjectDetailsSkeleton';
@@ -36,6 +36,15 @@ import { CategoryAutocomplete } from '../components/ui/CategoryAutocomplete';
 const CONDITIONS = [
   'NEW', 'LIKE_NEW', 'GOOD', 'FAIR', 'POOR', 'DAMAGED', 'NON_FUNCTIONAL'
 ] as const;
+
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
+};
 
 const objectFormSchema = z.object({
   objectName: z.string().min(1, 'Object name is required.').max(200),
@@ -81,7 +90,6 @@ export const EditObject: React.FC = () => {
   
   const { data: object, isLoading: isFetching, isError } = useObject(id!);
   const { mutateAsync: updateObject } = useUpdateObject();
-  const { mutateAsync: uploadImages } = useUploadImages();
   const { mutateAsync: deleteObject } = useDeleteObject();
 
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -191,24 +199,12 @@ export const EditObject: React.FC = () => {
     setApiError(null);
 
     const validImages = images.filter(img => img.progress === 100);
-    
-    // Upload new files
-    const newFiles = validImages.filter(img => img.file).map(img => img.file as File);
-    let uploadedUrls: string[] = [];
-    
-    if (newFiles.length > 0) {
-      const uploadRes = await uploadImages(newFiles);
-      if (uploadRes.success) {
-        uploadedUrls = uploadRes.data;
-      }
-    }
-
-    // Combine existing URLs and new uploaded URLs
-    let uploadIndex = 0;
-    const finalImages = validImages.map(img => {
-      if (img.file) return uploadedUrls[uploadIndex++];
-      return img.url; // Existing image from backend, e.g. /uploads/...
-    });
+    const finalImages = await Promise.all(
+      validImages.map(async img => {
+        if (img.file) return await fileToBase64(img.file);
+        return img.url;
+      })
+    );
 
     const finalPayload = {
       ...values,

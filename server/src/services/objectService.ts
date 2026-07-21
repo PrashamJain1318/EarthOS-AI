@@ -61,7 +61,7 @@ export const objectService = {
    * Retrieve all objects for a user (Analytics)
    */
   async getAllUnpaginated(userId: string): Promise<IObject[]> {
-    return ObjectModel.find({ userId: userId as any }).sort({ createdAt: -1 }).lean();
+    return ObjectModel.find({ userId: userId as any }).sort({ createdAt: -1 }).lean() as unknown as IObject[];
   },
 
   /**

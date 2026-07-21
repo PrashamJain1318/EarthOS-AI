@@ -142,17 +142,6 @@ export const objectService = {
     return api.put(`/objects/${id}`, data);
   },
 
-  uploadImages: async (files: File[]): Promise<{ success: boolean; data: string[] }> => {
-    const formData = new FormData();
-    files.forEach(file => formData.append('images', file));
-    const response = await api.post('/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-    return response.data;
-  },
-
   deleteObject: async (id: string): Promise<{ success: boolean }> => {
     return api.delete(`/objects/${id}`);
   }
