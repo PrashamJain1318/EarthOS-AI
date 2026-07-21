@@ -13,6 +13,7 @@ import { useAuthStore } from '../stores/authStore';
 import { DashboardWidget } from '../components/DashboardWidget';
 import { RecentActivity } from '../components/RecentActivity';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { useInfiniteObjects } from '../hooks/useObjects';
 
 const sparklineEarthScore = [{ value: 78 }, { value: 80 }, { value: 82 }, { value: 84 }, { value: 86 }, { value: 88 }];
 const sparklineCarbonSaved = [{ value: 100 }, { value: 115 }, { value: 130 }, { value: 142 }];
@@ -24,6 +25,9 @@ const sparklineDonations = [{ value: 1 }, { value: 3 }, { value: 4 }, { value: 6
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
+  const { data: objectsData, isLoading: isObjectsLoading } = useInfiniteObjects({});
+  
+  const totalObjects = objectsData?.pages?.[0]?.pagination?.total || 0;
 
   const handleLogout = () => {
     logout();
@@ -74,9 +78,9 @@ export const Dashboard: React.FC = () => {
           />
           <DashboardWidget
             title="Owned Objects"
-            value={34}
+            value={isObjectsLoading ? '...' : totalObjects}
             icon={<Package size={20} className="text-blue-500" />}
-            trend={8.5}
+            trend={totalObjects > 0 ? 8.5 : 0}
             tooltipText="Number of registered resource objects currently tracked in your circular grid."
             sparklineData={sparklineActiveObjects}
           />

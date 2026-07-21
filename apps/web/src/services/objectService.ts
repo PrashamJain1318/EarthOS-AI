@@ -130,6 +130,10 @@ export const objectService = {
     return api.get(endpoint);
   },
 
+  createObject: async (data: Partial<ObjectItem>): Promise<{ success: boolean; data: ObjectItem }> => {
+    return api.post('/objects', data);
+  },
+
   getObjectById: async (id: string): Promise<{ success: boolean; data: ObjectItem }> => {
     return api.get(`/objects/${id}`);
   },
