@@ -167,6 +167,17 @@ export const Login: React.FC = () => {
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Front-end Form Validation
+    if (!email || !email.includes('@')) {
+      setErrorMsg('Please enter a valid email address.');
+      return;
+    }
+    if (password.length < 8) {
+      setErrorMsg('Password must be at least 8 characters long.');
+      return;
+    }
+
     setIsLoading(true);
     setErrorMsg(null);
     setMismatchData(null);
@@ -366,8 +377,9 @@ export const Login: React.FC = () => {
                       value={email} 
                       onChange={(e) => setEmail(e.target.value)} 
                       placeholder="agent@earthos.ai" 
-                      className={`w-full bg-[#0F172A]/80 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white text-sm focus:outline-none transition-all ${selectedPortal.focusRing}`}
+                      className={`w-full bg-[#0F172A]/80 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white text-sm focus:outline-none transition-all ${selectedPortal.focusRing} ${errorMsg?.includes('email') ? 'border-red-500' : ''}`}
                       required
+                      maxLength={100}
                       aria-label="Email Address"
                     />
                   </div>
@@ -386,8 +398,10 @@ export const Login: React.FC = () => {
                       value={password} 
                       onChange={(e) => setPassword(e.target.value)} 
                       placeholder="••••••••" 
-                      className={`w-full bg-[#0F172A]/80 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white text-sm focus:outline-none transition-all ${selectedPortal.focusRing}`}
+                      className={`w-full bg-[#0F172A]/80 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white text-sm focus:outline-none transition-all ${selectedPortal.focusRing} ${errorMsg?.includes('Password') ? 'border-red-500' : ''}`}
                       required
+                      minLength={8}
+                      maxLength={50}
                       aria-label="Password"
                     />
                   </div>

@@ -1,6 +1,7 @@
 import { objectRepository, PaginationOptions, PaginatedResult } from '../repositories/objectRepository';
 import { IObject, ObjectModel } from '../models/Object';
 import { taxonomyService } from './taxonomyService';
+import crypto from 'crypto';
 
 export class AppValidationError extends Error {
   statusCode: number;
@@ -38,8 +39,12 @@ export const objectService = {
       await taxonomyService.processCategory(data.category, data.subCategory);
     }
 
+    // Automatically generate Digital Product Passport (DPP) ID
+    const passportId = `DPP-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
+
     const objectData = {
       ...data,
+      passportId,
       userId: userId as any // force cast to matching mongoose type
     };
     return objectRepository.create(objectData);
@@ -50,6 +55,13 @@ export const objectService = {
    */
   async getObjects(userId: string, options: PaginationOptions): Promise<PaginatedResult<IObject>> {
     return objectRepository.findAllByUser(userId, options);
+  },
+
+  /**
+   * Retrieve all objects for a user (Analytics)
+   */
+  async getAllUnpaginated(userId: string): Promise<IObject[]> {
+    return ObjectModel.find({ userId: userId as any }).sort({ createdAt: -1 }).lean() as unknown as IObject[];
   },
 
   /**

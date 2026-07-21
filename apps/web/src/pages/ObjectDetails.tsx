@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { EosButton, Typography, EosBadge } from '@earthos/ui';
-import { ArrowLeft, Edit2 } from 'lucide-react';
+import { ArrowLeft, Edit2, ShieldCheck } from 'lucide-react';
 import { useObject } from '../hooks/useObjects';
 import { ObjectDetailsSkeleton } from '../components/objects/details/ObjectDetailsSkeleton';
 import { ObjectError } from '../components/objects/ObjectError';
@@ -73,6 +73,9 @@ export const ObjectDetails: React.FC = () => {
         </div>
         <div className="flex gap-2">
           {object.archived && <EosBadge variant="warning">Archived</EosBadge>}
+          <EosButton variant="secondary" onClick={() => navigate(`/portal/user/objects/${object._id}/passport`)} className="font-bold border-[#00BCD4]/30 text-[#00BCD4] hover:bg-[#00BCD4]/10">
+            <ShieldCheck size={16} className="mr-1.5" /> View Passport
+          </EosButton>
           <EosButton variant="primary" onClick={() => navigate(`/objects/${object._id}/edit`)} className="font-bold">
             <Edit2 size={16} className="mr-1.5" /> Edit Object
           </EosButton>

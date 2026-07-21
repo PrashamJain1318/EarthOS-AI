@@ -12,6 +12,7 @@ objectsRouter.post('/', authorizeRoles(['USER', 'NGO', 'REPAIR_PARTNER', 'RECYCL
 objectsRouter.get('/', authorizeRoles(['USER', 'NGO', 'REPAIR_PARTNER', 'RECYCLER', 'SELLER', 'ENTERPRISE', 'GOVERNMENT', 'ADMIN', 'SUPER_ADMIN']), objectController.getAll);
 
 // Dynamic Queries (placed before parameterized ID matches)
+objectsRouter.get('/all', authorizeRoles(['USER', 'NGO', 'REPAIR_PARTNER', 'RECYCLER', 'SELLER', 'ENTERPRISE', 'GOVERNMENT', 'ADMIN', 'SUPER_ADMIN']), objectController.getAllUnpaginated);
 objectsRouter.get('/search', authorizeRoles(['USER', 'NGO', 'REPAIR_PARTNER', 'RECYCLER', 'SELLER', 'ENTERPRISE', 'GOVERNMENT', 'ADMIN', 'SUPER_ADMIN']), objectController.search);
 objectsRouter.get('/filter', authorizeRoles(['USER', 'NGO', 'REPAIR_PARTNER', 'RECYCLER', 'SELLER', 'ENTERPRISE', 'GOVERNMENT', 'ADMIN', 'SUPER_ADMIN']), objectController.filter);
 

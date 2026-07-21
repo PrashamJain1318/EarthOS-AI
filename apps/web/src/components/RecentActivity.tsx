@@ -10,6 +10,8 @@ import {
   ArrowRight,
   Clock
 } from 'lucide-react';
+import { ObjectItem } from '../services/objectService';
+import { formatDistanceToNow } from 'date-fns';
 
 type EventType = 'OBJECT' | 'MARKETPLACE' | 'REPAIR' | 'DONATION' | 'PASSPORT';
 
@@ -22,56 +24,9 @@ interface ActivityEvent {
   meta?: string;
 }
 
-const mockEvents: ActivityEvent[] = [
-  {
-    id: 'evt-1',
-    type: 'PASSPORT',
-    title: 'Passport Minted',
-    description: 'Cryptographic resource passport token generated for object #EO-8849 (Aluminium Batch).',
-    time: '12 minutes ago',
-    meta: 'EO-8849 / 2.4 Tons'
-  },
-  {
-    id: 'evt-2',
-    type: 'OBJECT',
-    title: 'Biomass Stream Registered',
-    description: 'Organic byproduct stream from facility B logged. Carbon abatement rating: A+.',
-    time: '45 minutes ago',
-    meta: 'Facility B / organic'
-  },
-  {
-    id: 'evt-3',
-    type: 'MARKETPLACE',
-    title: 'Circular Match Completed',
-    description: 'Sold 1.5 tons post-consumer PET stream to Recycler Inc. transaction complete.',
-    time: '2 hours ago',
-    meta: '+$840 Credit'
-  },
-  {
-    id: 'evt-4',
-    type: 'REPAIR',
-    title: 'Hardware Restored',
-    description: 'Batch 12 smart microprocessors completed inspection and returned to circulation.',
-    time: '4 hours ago',
-    meta: 'Longevity: 96%'
-  },
-  {
-    id: 'evt-5',
-    type: 'DONATION',
-    title: 'NGO Grant Allocated',
-    description: 'Dispatched $150 carbon offset credits to Ocean Cleanup NGO initiative.',
-    time: '1 day ago',
-    meta: 'Offset ID: #DON-99'
-  },
-  {
-    id: 'evt-6',
-    type: 'PASSPORT',
-    title: 'Ownership Transferred',
-    description: 'Object #EO-3829 ownership verified and signed to recycle partner B.',
-    time: '1 day ago',
-    meta: 'EO-3829 / copper'
-  }
-];
+interface Props {
+  objects?: ObjectItem[];
+}
 
 const categoryFilters: { label: string; value: EventType | 'ALL' }[] = [
   { label: 'All Activity', value: 'ALL' },
@@ -82,10 +37,59 @@ const categoryFilters: { label: string; value: EventType | 'ALL' }[] = [
   { label: 'Passports', value: 'PASSPORT' }
 ];
 
-export const RecentActivity: React.FC = () => {
+export const RecentActivity: React.FC<Props> = ({ objects = [] }) => {
   const [activeFilter, setActiveFilter] = useState<EventType | 'ALL'>('ALL');
 
-  const filteredEvents = mockEvents.filter(
+  const dynamicEvents = React.useMemo(() => {
+    if (!objects.length) return [];
+    
+    const events: (ActivityEvent & { timestamp: number })[] = [];
+    
+    objects.forEach(obj => {
+      // Creation Event
+      events.push({
+        id: `create-${obj._id}`,
+        type: 'OBJECT',
+        title: 'Resource Registered',
+        description: `New ${obj.category.toLowerCase()} resource stream registered to the grid.`,
+        time: formatDistanceToNow(new Date(obj.createdAt), { addSuffix: true }),
+        timestamp: new Date(obj.createdAt).getTime(),
+        meta: `${obj.objectId}`
+      });
+
+      // Passport Minted
+      if (obj.passportId) {
+        events.push({
+          id: `passport-${obj._id}`,
+          type: 'PASSPORT',
+          title: 'Passport Minted',
+          description: `Cryptographic digital product passport token generated.`,
+          time: formatDistanceToNow(new Date(obj.createdAt), { addSuffix: true }),
+          timestamp: new Date(obj.createdAt).getTime(),
+          meta: obj.passportId
+        });
+      }
+
+      // Repair Logs
+      if (obj.maintenanceRecords) {
+        obj.maintenanceRecords.forEach(record => {
+          events.push({
+            id: `repair-${record.recordId}`,
+            type: 'REPAIR',
+            title: 'Maintenance Logged',
+            description: record.title,
+            time: formatDistanceToNow(new Date(record.date), { addSuffix: true }),
+            timestamp: new Date(record.date).getTime(),
+            meta: record.cost ? `$${record.cost}` : 'Verified'
+          });
+        });
+      }
+    });
+
+    return events.sort((a, b) => b.timestamp - a.timestamp).slice(0, 15);
+  }, [objects]);
+
+  const filteredEvents = dynamicEvents.filter(
     (event) => activeFilter === 'ALL' || event.type === activeFilter
   );
 

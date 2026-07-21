@@ -71,6 +71,22 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({ isOpen
           value={filters.maxPurchaseDate ? filters.maxPurchaseDate.split('T')[0] : ''}
           onChange={e => setFilters({ maxPurchaseDate: e.target.value ? new Date(e.target.value).toISOString() : undefined })}
         />
+        
+        {/* Value Range */}
+        <EosInput
+          label="Min Estimated Value ($)"
+          type="number"
+          placeholder="0"
+          value={filters.minPrice || ''}
+          onChange={e => setFilters({ minPrice: e.target.value })}
+        />
+        <EosInput
+          label="Max Estimated Value ($)"
+          type="number"
+          placeholder="e.g. 5000"
+          value={filters.maxPrice || ''}
+          onChange={e => setFilters({ maxPrice: e.target.value })}
+        />
 
         {/* State */}
         <div className="flex flex-col gap-1.5">
