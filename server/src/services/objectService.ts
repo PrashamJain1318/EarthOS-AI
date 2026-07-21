@@ -69,8 +69,19 @@ export const objectService = {
    */
   async getDashboardStats(userId: string) {
     const pipeline = [
-      { $match: { userId: userId } },
+      { $match: { userId: userId, archived: false } },
       { 
+        $project: { 
+          purchasePrice: 1, 
+          passportId: 1, 
+          carbonScore: 1, 
+          repairCount: 1, 
+          marketplaceStatus: 1, 
+          category: 1, 
+          condition: 1 
+        } 
+      },
+      {
         $facet: {
           metrics: [
             { 

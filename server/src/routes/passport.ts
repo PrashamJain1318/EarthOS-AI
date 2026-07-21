@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { passportController } from '../controllers/passportController';
-import { authMiddleware, authorizeRoles } from '../middlewares/auth';
+import { authMiddleware, authorizeRoles } from '../middleware/auth';
 
 export const passportRouter = Router();
 

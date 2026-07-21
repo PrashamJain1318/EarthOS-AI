@@ -12,7 +12,8 @@ export const Marketplace: React.FC = () => {
     const fetchListings = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:8000/api/v1/passports/marketplace/listings');
+        const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+        const response = await fetch(`${BASE_URL}/passports/marketplace/listings`);
         const resData = await response.json();
         if (response.ok) {
           setItems(resData.data || []);

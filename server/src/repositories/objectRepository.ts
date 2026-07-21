@@ -85,10 +85,14 @@ export const objectRepository = {
   },
 
   /**
-   * Hard delete an object by its MongoDB _id, scoped to a user.
+   * Soft delete an object by its MongoDB _id, scoped to a user.
    */
   async remove(id: string, userId: string): Promise<IObject | null> {
-    return ObjectModel.findOneAndDelete({ _id: id, userId });
+    return ObjectModel.findOneAndUpdate(
+      { _id: id, userId },
+      { $set: { archived: true } },
+      { new: true }
+    );
   },
 
   /**

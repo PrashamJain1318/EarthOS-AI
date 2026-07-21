@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { scannerController } from '../controllers/scannerController';
-import { authMiddleware, authorizeRoles } from '../middlewares/auth';
+import { authMiddleware, authorizeRoles } from '../middleware/auth';
 
 export const scannerRouter = Router();
 

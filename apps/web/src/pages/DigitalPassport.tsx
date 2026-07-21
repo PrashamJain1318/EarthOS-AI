@@ -90,8 +90,9 @@ export const DigitalPassport: React.FC = () => {
     try {
       setSubmittingRepair(true);
       const token = localStorage.getItem('token');
+      const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
       
-      const response = await fetch(`http://localhost:8000/api/v1/passports/${object.passportId}/repairs`, {
+      const response = await fetch(`${BASE_URL}/passports/${object.passportId}/repairs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

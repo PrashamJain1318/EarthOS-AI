@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { objectController } from '../controllers/objectController';
-import { authMiddleware, authorizeRoles } from '../middlewares/auth';
+import { authMiddleware, authorizeRoles } from '../middleware/auth';
 
 export const objectsRouter = Router();
 

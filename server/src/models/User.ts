@@ -20,6 +20,10 @@ const UserSchema = new Schema({
   timestamps: true
 });
 
+// ─── Indexes ──────────────────────────────────────────────
+UserSchema.index({ refreshToken: 1 }, { sparse: true });
+UserSchema.index({ resetPasswordToken: 1 }, { sparse: true });
+
 // Pre-save hook: Hash passwords before writing to db
 UserSchema.pre('save', async function (next) {
   const user = this;

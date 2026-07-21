@@ -35,7 +35,8 @@ export const PublicPassport: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch(`http://localhost:8000/api/v1/passports/${passportId}`);
+        const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+        const response = await fetch(`${BASE_URL}/passports/${passportId}`);
         const resData = await response.json();
         
         if (!response.ok) {

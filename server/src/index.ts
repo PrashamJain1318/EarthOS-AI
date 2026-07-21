@@ -1,12 +1,13 @@
 import express from 'express';
 import cors from 'cors';
+import mongoose from 'mongoose';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import compression from 'compression';
 import { env } from './config/env';
 import { logger } from './config/logger';
-import { connectDatabases } from './config/db';
-import { globalErrorHandler } from './middlewares/errors';
+import { connectDatabases } from './config/database';
+import { globalErrorHandler } from './middleware/errorHandler';
 import authRoutes from './routes/auth';
 import objectRoutes from './routes/objects';
 import taxonomyRoutes from './routes/taxonomy';
@@ -20,8 +21,9 @@ app.use(helmet());
 
 // Cross-origin Resource Sharing configuration
 app.use(cors({
-  origin: '*', // Allow all client queries during initial foundation sprint
-  methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS']
+  origin: ['https://earth-os-ai-web.vercel.app', 'http://localhost:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Compression middleware
@@ -55,6 +57,17 @@ app.get('/health', (req, res) => {
       status: 'UP',
       uptime: process.uptime()
     }
+  });
+});
+
+// Production standard API health endpoint (Sprint 12.15)
+app.get('/api/v1/health', (req, res) => {
+  const isDbConnected = mongoose.connection.readyState === 1;
+  res.status(200).json({
+    success: true,
+    status: 'healthy',
+    database: isDbConnected ? 'connected' : 'disconnected',
+    environment: env.NODE_ENV
   });
 });
 
