@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { objectService, ObjectFilters } from '../services/objectService';
+import { objectService, ObjectFilters, ObjectItem } from '../services/objectService';
 
 export const useObject = (id: string) => {
   return useQuery({
@@ -24,6 +24,17 @@ export const useInfiniteObjects = (filters: ObjectFilters) => {
         return lastPage.pagination.page + 1;
       }
       return undefined;
+    },
+  });
+};
+
+export const useCreateObject = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: Partial<ObjectItem>) => objectService.createObject(data),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['objects'] });
     },
   });
 };

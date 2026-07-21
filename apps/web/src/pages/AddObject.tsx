@@ -26,6 +26,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
+import { useCreateObject } from '../hooks/useObjects';
 import { SmartTagInput } from '../components/ui/SmartTagInput';
 import { CategoryAutocomplete } from '../components/ui/CategoryAutocomplete';
 
@@ -87,6 +88,7 @@ export const AddObject: React.FC = () => {
   const autofill = location.state?.autofill;
   
   const accessToken = useAuthStore((state) => state.accessToken);
+  const { mutateAsync: createObject } = useCreateObject();
   
   const [toast, setToast] = useState<ToastState | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -199,24 +201,11 @@ export const AddObject: React.FC = () => {
     };
 
     try {
-      const response = await fetch('http://localhost:8000/api/v1/objects', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken || 'mock_jwt_access_token'}`
-        },
-        body: JSON.stringify(finalPayload)
-      });
-
-      const resData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(resData.error?.message || 'Failed to register resource object.');
-      }
+      const resData = await createObject(finalPayload as any);
 
       setToast({
         id: 'success-add-object',
-        message: `Registered ${resData.data.objectName} successfully as ID: ${resData.data.objectId}`,
+        message: `Registered object successfully.`,
         type: 'success'
       });
 
