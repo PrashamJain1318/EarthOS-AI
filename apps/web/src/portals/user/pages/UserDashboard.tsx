@@ -1,6 +1,6 @@
 import React, { Suspense, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Typography, EosCard, EosButton, EosBadge } from '@earthos/ui';
+import { Typography, EosCard, EosButton, EosBadge, EosEmptyState } from '@earthos/ui';
 import { Leaf, Box, Heart, Wrench, RefreshCw, ShoppingBag, ShieldCheck, ArrowRight } from 'lucide-react';
 import DashboardWidget from '../../../components/DashboardWidget';
 import { RecentActivity } from '../../../components/RecentActivity';
@@ -62,176 +62,193 @@ export const UserDashboard: React.FC = () => {
         </Typography>
       </div>
 
-      {/* KPI Widgets */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <DashboardWidget
-          title="Total Objects"
-          value={stats.totalObjects}
-          icon={<Box size={20} />}
-          tooltipText="Total registered items in your portfolio."
-          isLoading={isLoading}
-        />
-        <DashboardWidget
-          title="Total Asset Value"
-          value={`$${stats.totalEstimatedValue.toLocaleString()}`}
-          icon={<ShoppingBag size={20} />}
-          tooltipText="Cumulative estimated value of all registered assets."
-          isLoading={isLoading}
-        />
-        <DashboardWidget
-          title="Active Passports"
-          value={stats.activePassports}
-          icon={<ShieldCheck size={20} />}
-          tooltipText="Number of objects with minted Digital Product Passports."
-          isLoading={isLoading}
-        />
-        <DashboardWidget
-          title="Carbon Saved"
-          value={stats.carbonSaved}
-          unit="pts"
-          icon={<Leaf size={20} />}
-          tooltipText="CO2 emissions prevented via circulation."
-          isLoading={isLoading}
-        />
-        <DashboardWidget
-          title="Repair Count"
-          value={stats.repairCount}
-          icon={<Wrench size={20} />}
-          tooltipText="Total maintenance and repair operations logged."
-          isLoading={isLoading}
-        />
-        <DashboardWidget
-          title="Marketplace Activity"
-          value={stats.marketplaceTxs}
-          unit="listings"
-          icon={<RefreshCw size={20} />}
-          tooltipText="Objects currently engaged in marketplace activities."
-          isLoading={isLoading}
-        />
-      </div>
-
-      {/* Dynamic Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <EosCard variant="glass" className="p-6 border-[#B0BEC5]/10 dark:border-[#263238]/20 flex flex-col gap-4">
-          <div>
-            <Typography variant="h4" className="font-display font-bold">Category Distribution</Typography>
-          </div>
-          <Suspense fallback={<ChartLoadingFallback />}>
-            <CategoryDistributionChart objects={objects} />
-          </Suspense>
+      {!isLoading && objects.length === 0 ? (
+        <EosCard variant="glass" className="p-12 border-[#B0BEC5]/10 dark:border-[#263238]/20 mt-8">
+          <EosEmptyState
+            title="No Data Available"
+            description="Your dashboard is empty because you haven't added any objects yet. Register your first physical asset to see real-time analytics."
+            icon={<Box size={48} className="text-slate-300 dark:text-slate-700" />}
+            action={
+              <EosButton variant="primary" onClick={() => navigate('/user/objects/add')}>
+                Add Your First Object
+              </EosButton>
+            }
+          />
         </EosCard>
-
-        <EosCard variant="glass" className="p-6 border-[#B0BEC5]/10 dark:border-[#263238]/20 flex flex-col gap-4">
-          <div>
-            <Typography variant="h4" className="font-display font-bold">Total Asset Value</Typography>
+      ) : (
+        <>
+          {/* KPI Widgets */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            <DashboardWidget
+              title="Total Objects"
+              value={stats.totalObjects}
+              icon={<Box size={20} />}
+              tooltipText="Total registered items in your portfolio."
+              isLoading={isLoading}
+            />
+            <DashboardWidget
+              title="Total Asset Value"
+              value={`$${stats.totalEstimatedValue.toLocaleString()}`}
+              icon={<ShoppingBag size={20} />}
+              tooltipText="Cumulative estimated value of all registered assets."
+              isLoading={isLoading}
+            />
+            <DashboardWidget
+              title="Active Passports"
+              value={stats.activePassports}
+              icon={<ShieldCheck size={20} />}
+              tooltipText="Number of objects with minted Digital Product Passports."
+              isLoading={isLoading}
+            />
+            <DashboardWidget
+              title="Carbon Saved"
+              value={stats.carbonSaved}
+              unit="pts"
+              icon={<Leaf size={20} />}
+              tooltipText="CO2 emissions prevented via circulation."
+              isLoading={isLoading}
+            />
+            <DashboardWidget
+              title="Repair Count"
+              value={stats.repairCount}
+              icon={<Wrench size={20} />}
+              tooltipText="Total maintenance and repair operations logged."
+              isLoading={isLoading}
+            />
+            <DashboardWidget
+              title="Marketplace Activity"
+              value={stats.marketplaceTxs}
+              unit="listings"
+              icon={<RefreshCw size={20} />}
+              tooltipText="Objects currently engaged in marketplace activities."
+              isLoading={isLoading}
+            />
           </div>
-          <Suspense fallback={<ChartLoadingFallback />}>
-            <CurrentValueChart objects={objects} />
-          </Suspense>
-        </EosCard>
 
-        <EosCard variant="glass" className="p-6 border-[#B0BEC5]/10 dark:border-[#263238]/20 flex flex-col gap-4 lg:col-span-2">
-          <div>
-            <Typography variant="h4" className="font-display font-bold">Purchase Timeline</Typography>
-          </div>
-          <Suspense fallback={<ChartLoadingFallback />}>
-            <PurchaseTimelineChart objects={objects} />
-          </Suspense>
-        </EosCard>
-        
-        <EosCard variant="glass" className="p-6 border-[#B0BEC5]/10 dark:border-[#263238]/20 flex flex-col gap-4">
-          <div>
-            <Typography variant="h4" className="font-display font-bold">Warranty Status</Typography>
-          </div>
-          <Suspense fallback={<ChartLoadingFallback />}>
-            <WarrantyStatusChart objects={objects} />
-          </Suspense>
-        </EosCard>
+          {/* Dynamic Charts Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <EosCard variant="glass" className="p-6 border-[#B0BEC5]/10 dark:border-[#263238]/20 flex flex-col gap-4">
+              <div>
+                <Typography variant="h4" className="font-display font-bold">Category Distribution</Typography>
+              </div>
+              <Suspense fallback={<ChartLoadingFallback />}>
+                <CategoryDistributionChart objects={objects} />
+              </Suspense>
+            </EosCard>
 
-        <EosCard variant="glass" className="p-6 border-[#B0BEC5]/10 dark:border-[#263238]/20 flex flex-col gap-4">
-          <div>
-            <Typography variant="h4" className="font-display font-bold">Repair & Circularity</Typography>
-          </div>
-          <Suspense fallback={<ChartLoadingFallback />}>
-            <RepairStatisticsChart objects={objects} />
-          </Suspense>
-        </EosCard>
-      </div>
+            <EosCard variant="glass" className="p-6 border-[#B0BEC5]/10 dark:border-[#263238]/20 flex flex-col gap-4">
+              <div>
+                <Typography variant="h4" className="font-display font-bold">Total Asset Value</Typography>
+              </div>
+              <Suspense fallback={<ChartLoadingFallback />}>
+                <CurrentValueChart objects={objects} />
+              </Suspense>
+            </EosCard>
 
-      {/* Tables and Feeds */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        
-        {/* Recent Objects */}
-        <div className="xl:col-span-2 flex flex-col gap-4">
-          <Typography variant="h4" className="font-display font-bold">Recently Added Objects</Typography>
-          <EosCard variant="glass" className="p-0 border-[#B0BEC5]/10 dark:border-[#263238]/20 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-[#B0BEC5]/20 dark:border-[#263238]/50 text-xs text-gray-500 uppercase tracking-wider">
-                    <th className="p-4 font-semibold">Object Name</th>
-                    <th className="p-4 font-semibold">Category</th>
-                    <th className="p-4 font-semibold">Brand</th>
-                    <th className="p-4 font-semibold">Condition</th>
-                    <th className="p-4 font-semibold">Passport</th>
-                    <th className="p-4 font-semibold text-right">Added</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentObjects.map(obj => (
-                    <tr 
-                      key={obj._id} 
-                      className="border-b border-[#B0BEC5]/10 dark:border-[#263238]/30 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition-colors"
-                      onClick={() => navigate(`/portal/user/objects/${obj._id}`)}
-                    >
-                      <td className="p-4 font-medium flex items-center gap-3">
-                        {obj.images?.[0] ? (
-                          <img src={obj.images[0]} alt={obj.objectName} className="w-8 h-8 rounded-md object-cover bg-gray-100" />
-                        ) : (
-                          <div className="w-8 h-8 rounded-md bg-gray-100 dark:bg-[#162033] flex items-center justify-center">
-                            <Box size={14} className="text-gray-400" />
-                          </div>
-                        )}
-                        {obj.objectName}
-                      </td>
-                      <td className="p-4 text-sm text-gray-500">{obj.category}</td>
-                      <td className="p-4 text-sm text-gray-500">{obj.brand || '-'}</td>
-                      <td className="p-4">
-                        <EosBadge variant={obj.condition === 'NEW' ? 'success' : 'neutral'}>
-                          {obj.condition.replace('_', ' ')}
-                        </EosBadge>
-                      </td>
-                      <td className="p-4">
-                        {obj.passportId ? (
-                          <EosBadge variant="success" className="bg-[#2E7D32]/10 text-[#2E7D32] border-[#2E7D32]/20">Minted</EosBadge>
-                        ) : (
-                          <EosBadge variant="neutral">Pending</EosBadge>
-                        )}
-                      </td>
-                      <td className="p-4 text-sm text-gray-500 text-right whitespace-nowrap">
-                        {formatDistanceToNow(new Date(obj.createdAt), { addSuffix: true })}
-                      </td>
-                    </tr>
-                  ))}
-                  {recentObjects.length === 0 && !isLoading && (
-                    <tr>
-                      <td colSpan={6} className="p-8 text-center text-gray-500">
-                        No objects registered yet.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+            <EosCard variant="glass" className="p-6 border-[#B0BEC5]/10 dark:border-[#263238]/20 flex flex-col gap-4 lg:col-span-2">
+              <div>
+                <Typography variant="h4" className="font-display font-bold">Purchase Timeline</Typography>
+              </div>
+              <Suspense fallback={<ChartLoadingFallback />}>
+                <PurchaseTimelineChart objects={objects} />
+              </Suspense>
+            </EosCard>
+            
+            <EosCard variant="glass" className="p-6 border-[#B0BEC5]/10 dark:border-[#263238]/20 flex flex-col gap-4">
+              <div>
+                <Typography variant="h4" className="font-display font-bold">Warranty Status</Typography>
+              </div>
+              <Suspense fallback={<ChartLoadingFallback />}>
+                <WarrantyStatusChart objects={objects} />
+              </Suspense>
+            </EosCard>
+
+            <EosCard variant="glass" className="p-6 border-[#B0BEC5]/10 dark:border-[#263238]/20 flex flex-col gap-4">
+              <div>
+                <Typography variant="h4" className="font-display font-bold">Repair & Circularity</Typography>
+              </div>
+              <Suspense fallback={<ChartLoadingFallback />}>
+                <RepairStatisticsChart objects={objects} />
+              </Suspense>
+            </EosCard>
+          </div>
+
+          {/* Tables and Feeds */}
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            
+            {/* Recent Objects */}
+            <div className="xl:col-span-2 flex flex-col gap-4">
+              <Typography variant="h4" className="font-display font-bold">Recently Added Objects</Typography>
+              <EosCard variant="glass" className="p-0 border-[#B0BEC5]/10 dark:border-[#263238]/20 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-[#B0BEC5]/20 dark:border-[#263238]/50 text-xs text-gray-500 uppercase tracking-wider">
+                        <th className="p-4 font-semibold">Object Name</th>
+                        <th className="p-4 font-semibold">Category</th>
+                        <th className="p-4 font-semibold">Brand</th>
+                        <th className="p-4 font-semibold">Condition</th>
+                        <th className="p-4 font-semibold">Passport</th>
+                        <th className="p-4 font-semibold text-right">Added</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentObjects.map(obj => (
+                        <tr 
+                          key={obj._id} 
+                          className="border-b border-[#B0BEC5]/10 dark:border-[#263238]/30 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition-colors"
+                          onClick={() => navigate(`/portal/user/objects/${obj._id}`)}
+                        >
+                          <td className="p-4 font-medium flex items-center gap-3">
+                            {obj.images?.[0] ? (
+                              <img src={obj.images[0]} alt={obj.objectName} className="w-8 h-8 rounded-md object-cover bg-gray-100" />
+                            ) : (
+                              <div className="w-8 h-8 rounded-md bg-gray-100 dark:bg-[#162033] flex items-center justify-center">
+                                <Box size={14} className="text-gray-400" />
+                              </div>
+                            )}
+                            {obj.objectName}
+                          </td>
+                          <td className="p-4 text-sm text-gray-500">{obj.category}</td>
+                          <td className="p-4 text-sm text-gray-500">{obj.brand || '-'}</td>
+                          <td className="p-4">
+                            <EosBadge variant={obj.condition === 'NEW' ? 'success' : 'neutral'}>
+                              {obj.condition.replace('_', ' ')}
+                            </EosBadge>
+                          </td>
+                          <td className="p-4">
+                            {obj.passportId ? (
+                              <EosBadge variant="success" className="bg-[#2E7D32]/10 text-[#2E7D32] border-[#2E7D32]/20">Minted</EosBadge>
+                            ) : (
+                              <EosBadge variant="neutral">Pending</EosBadge>
+                            )}
+                          </td>
+                          <td className="p-4 text-sm text-gray-500 text-right whitespace-nowrap">
+                            {formatDistanceToNow(new Date(obj.createdAt), { addSuffix: true })}
+                          </td>
+                        </tr>
+                      ))}
+                      {recentObjects.length === 0 && !isLoading && (
+                        <tr>
+                          <td colSpan={6} className="p-8 text-center text-gray-500">
+                            No objects registered yet.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </EosCard>
             </div>
-          </EosCard>
-        </div>
 
-        {/* Recent Activity Timeline */}
-        <div className="xl:col-span-1">
-          <RecentActivity objects={objects} />
-        </div>
+            {/* Recent Activity Timeline */}
+            <div className="xl:col-span-1">
+              <RecentActivity objects={objects} />
+            </div>
 
-      </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Typography, EosButton, EosCard } from '@earthos/ui';
-import { Plus, Package } from 'lucide-react';
+import { Typography, EosButton, EosCard, EosEmptyState } from '@earthos/ui';
+import { Plus, Package, FileSearch } from 'lucide-react';
 import { useObjectStore } from '../stores/objectStore';
 import { useAllObjects, useDeleteObject } from '../hooks/useObjects';
 import { useDebounce } from '../hooks/useDebounce';
@@ -152,33 +152,28 @@ export const Objects: React.FC = () => {
       ) : isError ? (
         <ObjectError message={(error as Error)?.message} onRetry={() => refetch()} />
       ) : filteredAndSortedObjects.length === 0 ? (
-        <EosCard variant="glass" className="h-72 flex flex-col items-center justify-center gap-4 text-center border border-dashed border-[#B0BEC5]/30 p-8">
-          <div className="p-3 rounded-2xl bg-gray-50/50 dark:bg-white/5 border border-slate-200 dark:border-slate-800 text-gray-400 dark:text-[#CBD5E1]">
-            <Package size={36} />
-          </div>
-          <div>
-            <Typography variant="h4" className="font-bold">
-              {store.searchQuery || Object.keys(store.filters).length > 0 ? 'No matches found' : 'No registered objects'}
-            </Typography>
-            <Typography variant="small" className="text-[#B0BEC5] max-w-sm mt-1">
-              {store.searchQuery || Object.keys(store.filters).length > 0
+        <EosCard variant="glass" className="h-[400px] flex items-center justify-center border-[#B0BEC5]/10 dark:border-[#263238]/20 p-8">
+          <EosEmptyState
+            icon={store.searchQuery || Object.keys(store.filters).length > 0 ? <FileSearch size={48} className="text-slate-300 dark:text-slate-700" /> : <Package size={48} className="text-slate-300 dark:text-slate-700" />}
+            title={store.searchQuery || Object.keys(store.filters).length > 0 ? 'No matches found' : 'No registered objects'}
+            description={store.searchQuery || Object.keys(store.filters).length > 0
                 ? 'Try adjusting your search or filters to find what you are looking for.'
                 : 'Your resource catalog is empty. Scan an object or click below to record your first batch stream.'}
-            </Typography>
-          </div>
-          {store.searchQuery || Object.keys(store.filters).length > 0 ? (
-            <EosButton variant="secondary" onClick={() => store.resetFilters()} className="mt-2 font-bold">
-              Clear Filters
-            </EosButton>
-          ) : (
-            <EosButton 
-              variant="secondary" 
-              onClick={() => navigate('/objects/new')}
-              className="font-bold border border-[#2E7D32]/25 hover:border-[#2E7D32]/50 text-[#2E7D32] bg-[#2E7D32]/5 hover:bg-[#2E7D32]/10 mt-2"
-            >
-              Register Resource Stream
-            </EosButton>
-          )}
+            action={
+              store.searchQuery || Object.keys(store.filters).length > 0 ? (
+                <EosButton variant="secondary" onClick={() => store.resetFilters()} className="mt-2 font-bold">
+                  Clear Filters
+                </EosButton>
+              ) : (
+                <EosButton 
+                  variant="primary" 
+                  onClick={() => navigate('/objects/new')}
+                >
+                  Register Resource Stream
+                </EosButton>
+              )
+            }
+          />
         </EosCard>
       ) : (
         <ObjectList 

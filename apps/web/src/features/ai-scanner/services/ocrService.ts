@@ -31,10 +31,10 @@ class OcrService {
       const { data: { text, confidence } } = await Tesseract.recognize(
         imageToProcess,
         'eng',
-        { logger: m => console.log('Tesseract:', m) }
+        { logger: () => {} }
       );
 
-      console.log(`OCR Raw Text (Confidence: ${confidence}):\n`, text);
+
 
       const structuredData = this.parseStructuredData(text);
 
