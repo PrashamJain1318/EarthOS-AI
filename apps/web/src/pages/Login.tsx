@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Typography, EosBadge } from '@earthos/ui';
 import { 
@@ -172,20 +173,7 @@ export const Login: React.FC = () => {
 
     try {
       // Connect Authentication: Hit the real backend (Sprint 10.8.4)
-      const response = await fetch('http://localhost:8000/api/v1/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email, password })
-      });
-
-      const resData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(resData.error?.message || 'Access credentials rejected.');
-      }
-
+      const resData = await api.post('/auth/login', { email, password });
       const { accessToken, user } = resData.data;
       const userRole = user.role as UserRole;
 
@@ -267,7 +255,7 @@ export const Login: React.FC = () => {
           </div>
 
           {/* Cards Grid */}
-          <div className="flex flex-col gap-3.5">
+          <div className="flex flex-row md:flex-col overflow-x-auto md:overflow-x-visible snap-x snap-mandatory md:snap-none gap-3.5 pb-4 md:pb-0 -mx-6 px-6 md:mx-0 md:px-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {PORTALS.map((portal, index) => {
               const CardIcon = portal.icon;
               const isSelected = selectedIdx === index;
@@ -278,7 +266,7 @@ export const Login: React.FC = () => {
                   role="button"
                   onClick={() => setSelectedIdx(index)}
                   onKeyDown={(e) => handleKeyDown(e, index)}
-                  className={`p-4 rounded-2xl border-2 flex items-center justify-between gap-4 cursor-pointer outline-none transition-all duration-300 ${
+                  className={`p-4 rounded-2xl border-2 flex items-center justify-between gap-4 cursor-pointer outline-none transition-all duration-300 min-w-[75vw] sm:min-w-[45vw] md:min-w-0 md:w-full snap-center shrink-0 ${
                     isSelected 
                       ? `${portal.colorClass} ${portal.activeBg} shadow-lg shadow-black/35 scale-[1.01]` 
                       : 'border-white/5 hover:border-white/10 hover:bg-white/5 bg-[#0F172A]/40'
@@ -367,48 +355,54 @@ export const Login: React.FC = () => {
               <form onSubmit={handleLoginSubmit} className="flex flex-col gap-4">
                 {/* Email Input */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email Address</label>
+                  <label htmlFor="email-input" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email Address</label>
                   <div className="relative">
                     <span className="absolute left-4 top-3.5 text-slate-500">
                       <Mail size={16} />
                     </span>
                     <input 
+                      id="email-input"
                       type="email" 
                       value={email} 
                       onChange={(e) => setEmail(e.target.value)} 
                       placeholder="agent@earthos.ai" 
                       className={`w-full bg-[#0F172A]/80 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white text-sm focus:outline-none transition-all ${selectedPortal.focusRing}`}
                       required
+                      aria-label="Email Address"
                     />
                   </div>
                 </div>
 
                 {/* Password Input */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Password</label>
+                  <label htmlFor="password-input" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Password</label>
                   <div className="relative">
                     <span className="absolute left-4 top-3.5 text-slate-500">
                       <KeyRound size={16} />
                     </span>
                     <input 
+                      id="password-input"
                       type="password" 
                       value={password} 
                       onChange={(e) => setPassword(e.target.value)} 
                       placeholder="••••••••" 
                       className={`w-full bg-[#0F172A]/80 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white text-sm focus:outline-none transition-all ${selectedPortal.focusRing}`}
                       required
+                      aria-label="Password"
                     />
                   </div>
                 </div>
 
                 {/* Remember Me & Forgot Password */}
                 <div className="flex justify-between items-center text-xs mt-1 select-none font-semibold">
-                  <label className="flex items-center gap-2 cursor-pointer text-slate-400 hover:text-white transition-colors">
+                  <label htmlFor="remember-me" className="flex items-center gap-2 cursor-pointer text-slate-400 hover:text-white transition-colors">
                     <input 
+                      id="remember-me"
                       type="checkbox" 
                       checked={rememberMe} 
                       onChange={(e) => setRememberMe(e.target.checked)} 
                       className="rounded border-white/10 bg-white/5 text-cyan-500 focus:ring-0 focus:ring-offset-0 h-4 w-4"
+                      aria-label="Remember Me"
                     />
                     <span>Remember Me</span>
                   </label>

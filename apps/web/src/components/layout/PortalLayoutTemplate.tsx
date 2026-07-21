@@ -109,7 +109,8 @@ export const PortalLayoutTemplate: React.FC<PortalLayoutTemplateProps> = ({
               </div>
               <div className="hidden lg:flex flex-col text-left">
                 <span className="text-xs font-bold text-[#1F2937] dark:text-[#F8FAFC]">{user?.name || 'Arthur Dent'}</span>
-                <span className="text-[10px] text-gray-400 font-medium capitalize">{user?.role?.toLowerCase() || 'User'}</span>
+                <span className="text-[10px] text-gray-400 font-medium">{user?.email || 'arthur@dent.com'}</span>
+                <span className="text-[9px] uppercase tracking-wider text-[#B0BEC5] font-bold mt-0.5">{user?.role || 'USER'}</span>
               </div>
             </div>
 

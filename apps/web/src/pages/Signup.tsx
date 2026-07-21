@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { motion } from 'framer-motion';
 import { Typography, EosInput, EosButton, EosBadge } from '@earthos/ui';
 import { User, Mail, KeyRound, AlertCircle, ArrowRight, Shield } from 'lucide-react';
+import { api } from '../lib/api';
 
 const signupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -40,11 +41,19 @@ export const Signup: React.FC = () => {
     setIsLoading(true);
     setErrorMsg(null);
 
-    // Simulate mock sign-up registration and pass data state
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await api.post('/auth/signup', {
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        role: data.role === 'REPAIR_SHOP' ? 'REPAIR_PARTNER' : data.role
+      });
       navigate('/verify-email', { state: { email: data.email, name: data.name, role: data.role } });
-    }, 1500);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to create account.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
