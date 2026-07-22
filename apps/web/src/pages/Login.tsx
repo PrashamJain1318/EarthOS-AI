@@ -150,6 +150,7 @@ export const Login: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const isSubmitting = useRef(false);
 
   // Mismatch Gateway Modal State (Sprint 10.8.4)
   const [mismatchData, setMismatchData] = useState<{
@@ -167,14 +168,18 @@ export const Login: React.FC = () => {
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting.current) return;
+    isSubmitting.current = true;
     
     // Front-end Form Validation
     if (!email || !email.includes('@')) {
       setErrorMsg('Please enter a valid email address.');
+      isSubmitting.current = false;
       return;
     }
     if (password.length < 8) {
       setErrorMsg('Password must be at least 8 characters long.');
+      isSubmitting.current = false;
       return;
     }
 
@@ -197,6 +202,7 @@ export const Login: React.FC = () => {
           user,
           token: accessToken
         });
+        isSubmitting.current = false;
         return;
       }
 
@@ -214,6 +220,7 @@ export const Login: React.FC = () => {
       setErrorMsg(err instanceof Error ? err.message : 'Authentication failed.');
     } finally {
       setIsLoading(false);
+      isSubmitting.current = false;
     }
   };
 

@@ -130,6 +130,14 @@ export const objectService = {
     return api.get(endpoint);
   },
 
+  getAllObjects: async () => {
+    return api.get('/objects/all');
+  },
+
+  getDashboardStats: async () => {
+    return api.get('/objects/stats');
+  },
+
   createObject: async (data: Partial<ObjectItem>): Promise<{ success: boolean; data: ObjectItem }> => {
     return api.post('/objects', data);
   },

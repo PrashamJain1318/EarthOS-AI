@@ -7,6 +7,8 @@ import { motion } from 'framer-motion';
 import { Typography, EosInput, EosButton, EosBadge } from '@earthos/ui';
 import { User, Mail, KeyRound, AlertCircle, ArrowRight, Shield } from 'lucide-react';
 import { api } from '../lib/api';
+import { useAuthStore } from '../stores/authStore';
+import { roleRoutes } from '../components/RouteProtection';
 
 const signupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -23,8 +25,10 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 
 export const Signup: React.FC = () => {
   const navigate = useNavigate();
+  const login = useAuthStore((state) => state.login);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const isSubmitting = React.useRef(false);
 
   const {
     register,
@@ -38,21 +42,36 @@ export const Signup: React.FC = () => {
   });
 
   const onSubmit = async (data: SignupFormValues) => {
+    if (isSubmitting.current) return;
+    isSubmitting.current = true;
     setIsLoading(true);
     setErrorMsg(null);
 
     try {
-      await api.post('/auth/signup', {
+      const res = await api.post('/auth/signup', {
         name: data.name,
         email: data.email,
         password: data.password,
         role: data.role === 'REPAIR_SHOP' ? 'REPAIR_PARTNER' : data.role
       });
-      navigate('/verify-email', { state: { email: data.email, name: data.name, role: data.role } });
+      
+      const user = res?.data?.user;
+      const accessToken = res?.data?.accessToken;
+      
+      if (!user || !accessToken) {
+        throw new Error('Invalid response from server. Please try again or check backend version.');
+      }
+
+      login(user, accessToken);
+      
+      const destination = roleRoutes[user.role as keyof typeof roleRoutes] || '/portal/user/dashboard';
+      navigate(destination);
+      
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to create account.');
     } finally {
       setIsLoading(false);
+      isSubmitting.current = false;
     }
   };
 

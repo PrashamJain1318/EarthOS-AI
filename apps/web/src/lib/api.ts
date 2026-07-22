@@ -1,6 +1,6 @@
 import { useAuthStore } from '../stores/authStore';
 
-const BASE_URL = 'http://localhost:8000/api/v1';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 export class ApiError extends Error {
   status: number;
@@ -23,16 +23,27 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  let response;
+  try {
+    response = await fetch(`${BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
+  } catch (error) {
+    throw new ApiError(0, "Network failure. Please check your internet connection.");
+  }
 
   const contentType = response.headers.get('content-type');
   let data;
   
   if (contentType && contentType.includes('application/json')) {
     data = await response.json();
+  }
+
+  if (response.status === 401) {
+    useAuthStore.getState().logout();
+    window.dispatchEvent(new CustomEvent('auth-expired'));
+    throw new ApiError(401, "Session expired. Please log in again.");
   }
 
   if (!response.ok) {

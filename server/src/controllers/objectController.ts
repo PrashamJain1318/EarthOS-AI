@@ -86,6 +86,27 @@ export const objectController = {
   },
 
   /**
+   * GET /api/v1/objects/stats
+   */
+  async getStats(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED', message: 'User session not found.' } });
+        return;
+      }
+
+      const stats = await objectService.getDashboardStats(userId);
+      res.status(200).json({
+        success: true,
+        data: stats
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
    * GET /api/v1/objects/search
    */
   async search(req: Request, res: Response, next: NextFunction): Promise<void> {

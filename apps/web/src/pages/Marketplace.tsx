@@ -12,7 +12,8 @@ export const Marketplace: React.FC = () => {
     const fetchListings = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:8000/api/v1/passports/marketplace/listings');
+        const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+        const response = await fetch(`${BASE_URL}/passports/marketplace/listings`);
         const resData = await response.json();
         if (response.ok) {
           setItems(resData.data || []);
@@ -102,7 +103,7 @@ export const Marketplace: React.FC = () => {
               {/* Material preview image */}
               <div className="h-40 w-full rounded-xl overflow-hidden bg-black/45 border border-white/5 flex items-center justify-center">
                 {item.images && item.images.length > 0 ? (
-                  <img src={item.images[0]} alt={item.objectName} className="w-full h-full object-cover" />
+                  <img src={item.images[0]} alt={item.objectName} loading="lazy" className="w-full h-full object-cover" />
                 ) : (
                   <ShoppingBag size={48} className="text-white/10" />
                 )}

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { objectController } from '../controllers/objectController';
-import { authMiddleware, authorizeRoles } from '../middlewares/auth';
+import { authMiddleware, authorizeRoles } from '../middleware/auth';
 
 export const objectsRouter = Router();
 
@@ -13,6 +13,7 @@ objectsRouter.get('/', authorizeRoles(['USER', 'NGO', 'REPAIR_PARTNER', 'RECYCLE
 
 // Dynamic Queries (placed before parameterized ID matches)
 objectsRouter.get('/all', authorizeRoles(['USER', 'NGO', 'REPAIR_PARTNER', 'RECYCLER', 'SELLER', 'ENTERPRISE', 'GOVERNMENT', 'ADMIN', 'SUPER_ADMIN']), objectController.getAllUnpaginated);
+objectsRouter.get('/stats', authorizeRoles(['USER', 'NGO', 'REPAIR_PARTNER', 'RECYCLER', 'SELLER', 'ENTERPRISE', 'GOVERNMENT', 'ADMIN', 'SUPER_ADMIN']), objectController.getStats);
 objectsRouter.get('/search', authorizeRoles(['USER', 'NGO', 'REPAIR_PARTNER', 'RECYCLER', 'SELLER', 'ENTERPRISE', 'GOVERNMENT', 'ADMIN', 'SUPER_ADMIN']), objectController.search);
 objectsRouter.get('/filter', authorizeRoles(['USER', 'NGO', 'REPAIR_PARTNER', 'RECYCLER', 'SELLER', 'ENTERPRISE', 'GOVERNMENT', 'ADMIN', 'SUPER_ADMIN']), objectController.filter);
 
