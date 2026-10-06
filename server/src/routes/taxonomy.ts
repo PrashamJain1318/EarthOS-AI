@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { taxonomyController } from '../controllers/taxonomyController';
-import { authMiddleware } from '../middlewares/auth';
+import { authMiddleware } from '../middleware/auth';
 
 const router = Router();
 

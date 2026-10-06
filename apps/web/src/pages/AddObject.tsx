@@ -92,6 +92,7 @@ export const AddObject: React.FC = () => {
   
   const [toast, setToast] = useState<ToastState | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitLock = useRef(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
   // Tags and reminders state
@@ -167,6 +168,8 @@ export const AddObject: React.FC = () => {
 
   // Handle form submission and API call
   const onSubmit = async (values: ObjectFormValues) => {
+    if (submitLock.current) return;
+    submitLock.current = true;
     setIsSubmitting(true);
     setApiError(null);
 
@@ -226,6 +229,7 @@ export const AddObject: React.FC = () => {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred during object registration.';
       setApiError(errorMessage);
       setIsSubmitting(false);
+      submitLock.current = false;
     }
   };
 
@@ -528,7 +532,7 @@ export const AddObject: React.FC = () => {
                   key={img.id}
                   className="relative group aspect-square rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-black/10 flex items-center justify-center"
                 >
-                  <img src={img.url} alt="Upload preview" className="w-full h-full object-cover select-none" />
+                  <img src={img.url} alt="Upload preview" loading="lazy" className="w-full h-full object-cover select-none" />
                   
                   {/* Progress overlay */}
                   {img.progress < 100 && (

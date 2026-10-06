@@ -3,13 +3,16 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 import { ObjectItem } from '../../../services/objectService';
 
 interface Props {
-  objects: ObjectItem[];
+  objects?: ObjectItem[];
+  preAggregatedData?: { name: string; value: number }[];
 }
 
 const COLORS = ['#00BCD4', '#2E7D32', '#8B5CF6', '#F59E0B', '#EF4444', '#3B82F6'];
 
-const CategoryDistributionChart: React.FC<Props> = ({ objects }) => {
+const CategoryDistributionChart: React.FC<Props> = ({ objects = [], preAggregatedData }) => {
   const data = useMemo(() => {
+    if (preAggregatedData) return preAggregatedData.sort((a, b) => b.value - a.value);
+    
     const counts: Record<string, number> = {};
     objects.forEach(obj => {
       const cat = obj.category || 'Uncategorized';
@@ -18,7 +21,7 @@ const CategoryDistributionChart: React.FC<Props> = ({ objects }) => {
     return Object.entries(counts)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
-  }, [objects]);
+  }, [objects, preAggregatedData]);
 
   if (!data.length) return <div className="h-[260px] flex items-center justify-center text-gray-400 text-sm">No data available</div>;
 

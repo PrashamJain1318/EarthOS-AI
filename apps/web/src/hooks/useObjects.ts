@@ -22,6 +22,16 @@ export const useAllObjects = () => {
   });
 };
 
+export const useDashboardStats = () => {
+  return useQuery({
+    queryKey: ['dashboardStats'],
+    queryFn: async () => {
+      const response = await objectService.getDashboardStats();
+      return response.data;
+    },
+  });
+};
+
 export const useInfiniteObjects = (filters: ObjectFilters) => {
   return useInfiniteQuery({
     queryKey: ['objects', filters],

@@ -94,6 +94,7 @@ export const EditObject: React.FC = () => {
 
   const [toast, setToast] = useState<ToastState | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitLock = useRef(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
   const [tags, setTags] = useState<string[]>([]);
@@ -195,6 +196,8 @@ export const EditObject: React.FC = () => {
 
   // Update Submission
   const onSubmit = async (values: ObjectFormValues) => {
+    if (submitLock.current) return;
+    submitLock.current = true;
     setIsSubmitting(true);
     setApiError(null);
 
@@ -237,6 +240,7 @@ export const EditObject: React.FC = () => {
     } catch (err) {
       setApiError(err instanceof Error ? err.message : 'Failed to update object.');
       setIsSubmitting(false);
+      submitLock.current = false;
     }
   };
 
@@ -494,7 +498,7 @@ export const EditObject: React.FC = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
               {images.map(img => (
                 <div key={img.id} className="relative group aspect-square rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-black/10 flex items-center justify-center">
-                  <img src={img.url} alt="Upload preview" className="w-full h-full object-cover" />
+                  <img src={img.url} alt="Upload preview" loading="lazy" className="w-full h-full object-cover" />
                   {img.progress < 100 && (
                     <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-3 gap-2">
                       <div className="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden">

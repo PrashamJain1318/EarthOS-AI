@@ -32,7 +32,8 @@ export const useAuthStore = create<AuthState>()(
         const { token } = get();
         if (token) {
           try {
-            await fetch('http://localhost:8000/api/v1/auth/logout', {
+            const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+            await fetch(`${BASE_URL}/auth/logout`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

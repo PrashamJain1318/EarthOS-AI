@@ -28,7 +28,9 @@ redisClient.on('connect', () => {
 export async function connectDatabases(): Promise<void> {
   try {
     // Connect to MongoDB Atlas / Local
-    await mongoose.connect(env.MONGODB_URI);
+    await mongoose.connect(env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 5000, // Fail fast if DB is unreachable
+    });
     logger.info('🚀 MongoDB Database connected successfully.');
   } catch (err: any) {
     logger.error(`❌ MongoDB connection failed: ${err.message}`);

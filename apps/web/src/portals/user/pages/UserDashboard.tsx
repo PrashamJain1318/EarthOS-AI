@@ -4,7 +4,7 @@ import { Typography, EosCard, EosButton, EosBadge, EosEmptyState } from '@eartho
 import { Leaf, Box, Heart, Wrench, RefreshCw, ShoppingBag, ShieldCheck, ArrowRight } from 'lucide-react';
 import DashboardWidget from '../../../components/DashboardWidget';
 import { RecentActivity } from '../../../components/RecentActivity';
-import { useAllObjects } from '../../../hooks/useObjects';
+import { useAllObjects, useDashboardStats } from '../../../hooks/useObjects';
 import { formatDistanceToNow } from 'date-fns';
 
 const CategoryDistributionChart = React.lazy(() => import('../../../components/charts/CategoryDistributionChart'));
@@ -22,17 +22,21 @@ const ChartLoadingFallback: React.FC = () => (
 export const UserDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { data: objects = [], isLoading, isError, refetch } = useAllObjects();
+  const { data: statsData, isLoading: statsLoading } = useDashboardStats();
 
   const stats = useMemo(() => {
+    if (statsData) return statsData;
+    // Fallback while loading
     return {
-      totalObjects: objects.length,
-      totalEstimatedValue: objects.reduce((sum, obj) => sum + (obj.purchasePrice || 0), 0),
-      activePassports: objects.filter(obj => obj.passportId).length,
-      carbonSaved: objects.reduce((sum, obj) => sum + (obj.carbonScore || 0), 0),
-      repairCount: objects.reduce((sum, obj) => sum + (obj.repairCount || 0), 0),
-      marketplaceTxs: objects.filter(obj => obj.marketplaceStatus !== 'NONE').length,
+      totalObjects: 0,
+      totalEstimatedValue: 0,
+      activePassports: 0,
+      carbonSaved: 0,
+      repairCount: 0,
+      marketplaceTxs: 0,
+      categoryCounts: []
     };
-  }, [objects]);
+  }, [statsData]);
 
   const recentObjects = useMemo(() => {
     return [...objects]
@@ -132,7 +136,7 @@ export const UserDashboard: React.FC = () => {
                 <Typography variant="h4" className="font-display font-bold">Category Distribution</Typography>
               </div>
               <Suspense fallback={<ChartLoadingFallback />}>
-                <CategoryDistributionChart objects={objects} />
+                <CategoryDistributionChart objects={objects} preAggregatedData={stats.categoryCounts?.map((c: any) => ({ name: c._id, value: c.count }))} />
               </Suspense>
             </EosCard>
 
@@ -201,7 +205,7 @@ export const UserDashboard: React.FC = () => {
                         >
                           <td className="p-4 font-medium flex items-center gap-3">
                             {obj.images?.[0] ? (
-                              <img src={obj.images[0]} alt={obj.objectName} className="w-8 h-8 rounded-md object-cover bg-gray-100" />
+                              <img src={obj.images[0]} alt={obj.objectName} loading="lazy" className="w-8 h-8 rounded-md object-cover bg-gray-100" />
                             ) : (
                               <div className="w-8 h-8 rounded-md bg-gray-100 dark:bg-[#162033] flex items-center justify-center">
                                 <Box size={14} className="text-gray-400" />

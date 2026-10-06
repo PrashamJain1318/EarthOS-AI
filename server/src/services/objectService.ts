@@ -65,6 +65,88 @@ export const objectService = {
   },
 
   /**
+   * MongoDB Aggregation for Dashboard Stats
+   */
+  async getDashboardStats(userId: string) {
+    const pipeline = [
+      { $match: { userId: userId, archived: false } },
+      { 
+        $project: { 
+          purchasePrice: 1, 
+          passportId: 1, 
+          carbonScore: 1, 
+          repairCount: 1, 
+          marketplaceStatus: 1, 
+          category: 1, 
+          condition: 1 
+        } 
+      },
+      {
+        $facet: {
+          metrics: [
+            { 
+              $group: { 
+                _id: null, 
+                totalObjects: { $sum: 1 },
+                totalEstimatedValue: { $sum: "$purchasePrice" },
+                activePassports: { 
+                  $sum: { $cond: [{ $ifNull: ["$passportId", false] }, 1, 0] } 
+                },
+                carbonSaved: { $sum: "$carbonScore" },
+                repairCount: { $sum: "$repairCount" },
+                marketplaceTxs: { 
+                  $sum: { $cond: [{ $ne: ["$marketplaceStatus", "NONE"] }, 1, 0] } 
+                }
+              } 
+            }
+          ],
+          categoryCounts: [
+            {
+              $group: {
+                _id: { $ifNull: ["$category", "Uncategorized"] },
+                count: { $sum: 1 }
+              }
+            }
+          ],
+          conditionCounts: [
+            {
+              $group: {
+                _id: { $ifNull: ["$condition", "UNKNOWN"] },
+                count: { $sum: 1 }
+              }
+            }
+          ]
+        }
+      }
+    ];
+    
+    const result = await ObjectModel.aggregate(pipeline);
+    if (result.length > 0) {
+      const { metrics, categoryCounts, conditionCounts } = result[0];
+      const stats = metrics.length > 0 ? metrics[0] : {
+        totalObjects: 0,
+        totalEstimatedValue: 0,
+        activePassports: 0,
+        carbonSaved: 0,
+        repairCount: 0,
+        marketplaceTxs: 0
+      };
+      if (stats._id !== undefined) delete stats._id;
+      return { ...stats, categoryCounts, conditionCounts };
+    }
+    return {
+      totalObjects: 0,
+      totalEstimatedValue: 0,
+      activePassports: 0,
+      carbonSaved: 0,
+      repairCount: 0,
+      marketplaceTxs: 0,
+      categoryCounts: [],
+      conditionCounts: []
+    };
+  },
+
+  /**
    * Retrieve details of a single object.
    */
   async getObjectById(id: string, userId: string): Promise<IObject> {

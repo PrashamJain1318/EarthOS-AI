@@ -51,5 +51,37 @@ export const taxonomyService = {
         { upsert: true, new: true, setDefaultsOnInsert: true }
       );
     }
+  },
+
+  getCategories: async (q?: string, parentId?: string | null) => {
+    const query: any = { isActive: true };
+
+    if (q) {
+      query.name = { $regex: q, $options: 'i' };
+    }
+
+    if (parentId !== undefined) {
+      query.parentId = parentId === 'null' ? null : parentId;
+    }
+
+    return CategoryModel.find(query)
+      .sort({ usageCount: -1, name: 1 })
+      .limit(50);
+  },
+
+  getPopularTags: async (limit: number = 10) => {
+    return TagModel.find()
+      .sort({ usageCount: -1, lastUsedAt: -1 })
+      .limit(limit);
+  },
+
+  searchTags: async (q: string) => {
+    if (!q) return [];
+    
+    return TagModel.find({
+      name: { $regex: `^${q}`, $options: 'i' }
+    })
+    .sort({ usageCount: -1 })
+    .limit(10);
   }
 };

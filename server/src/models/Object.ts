@@ -321,6 +321,9 @@ ObjectSchema.index(
   { name: 'object_text_search', weights: { objectName: 10, brand: 5, tags: 3, description: 1 } }
 );
 
+// ─── Compound Index for Multi-Tenant Querying ────────────
+ObjectSchema.index({ userId: 1, archived: 1, category: 1, condition: 1 });
+
 // ─── Pre-save: Auto-generate objectId ────────────────────
 
 ObjectSchema.pre<IObject>('save', async function (next) {

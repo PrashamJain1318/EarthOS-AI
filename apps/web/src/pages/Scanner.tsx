@@ -106,7 +106,8 @@ export const Scanner: React.FC = () => {
         endDate: historyEndDate
       });
 
-      const response = await fetch(`http://localhost:8000/api/v1/scanner/history?${queryParams}`, {
+      const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+      const response = await fetch(`${BASE_URL}/scanner/history?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${accessToken || 'mock_jwt_access_token'}`
         }
@@ -208,8 +209,8 @@ export const Scanner: React.FC = () => {
       try {
         const base64 = await fileToBase64(file);
         
-        // Pipe scanning request to standard secure backend AI endpoint
-        const response = await fetch('http://localhost:8000/api/v1/scanner/scan', {
+        const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+        const response = await fetch(`${BASE_URL}/scanner/scan`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -247,7 +248,8 @@ export const Scanner: React.FC = () => {
       // Wait a tick for UI update, then POST to backend
       setTimeout(async () => {
         try {
-          const response = await fetch('http://localhost:8000/api/v1/scanner/scan', {
+          const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+          const response = await fetch(`${BASE_URL}/scanner/scan`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -330,7 +332,8 @@ export const Scanner: React.FC = () => {
 
   const handleDeleteHistoryItem = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/scanner/history/${id}`, {
+      const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+      const response = await fetch(`${BASE_URL}/scanner/history/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${accessToken || 'mock_jwt_access_token'}`
@@ -347,7 +350,8 @@ export const Scanner: React.FC = () => {
   const handleClearAllHistory = async () => {
     if (window.confirm('Are you sure you want to clear your entire scan history?')) {
       try {
-        const response = await fetch(`http://localhost:8000/api/v1/scanner/history`, {
+        const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+        const response = await fetch(`${BASE_URL}/scanner/history`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${accessToken || 'mock_jwt_access_token'}`
